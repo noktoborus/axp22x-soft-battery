@@ -8,11 +8,8 @@ Not decided where it says "proposed".
 
 ### The module
 
-- One power supply of type Battery, `uconsole-soft-battery`: `status`,
-  `present`, `voltage_now`, `current_now`, `charge_full` (learned),
-  `charge_full_design` (device tree), `charge_now`, `capacity`,
-  `energy_*`, `time_to_empty`. Its own attributes: `learn_state`,
-  `learn_charge`, `learn_energy`.
+- One power supply of type Battery, `uconsole-soft-battery`; its
+  properties and its own attributes: "The interface" below.
 - The node `battery-power-supply` of the AXP is off (D5). The module sets
   the PMIC up at each probe: the current of the charge (2.1 A,
   `constant-charge-current-max-microamp` of `battery@0`), `V_OFF`
@@ -51,6 +48,62 @@ Not decided where it says "proposed".
 - While the learning runs, all its data is in the memory of the module
   only (D16). Nothing goes to the disk before `done`.
 
+### The interface
+
+Proposed (`discussion.md`, "The interface of the module"). Units as the
+power supply class has them: µV, µA, µAh, µWh; R in µΩ.
+
+The properties of the power supply (the class, read by upower):
+`present`, `status` (Charging, Discharging, Full: the full state of the
+marker, Not charging), `technology`, `capacity`, `capacity_level`,
+`voltage_now`, `current_now` (its sign as the ABI of 7.3 says, to check
+in `Documentation/ABI/testing/sysfs-class-power`), `power_now`,
+`charge_full` (of the model), `charge_full_design` (device tree),
+`charge_now`, `energy_full`, `energy_full_design`, `energy_now`,
+`time_to_empty_now`, `time_to_full_now`, `voltage_min_design`,
+`voltage_max_design`, `constant_charge_current_max`, `scope` (System).
+
+Its own attributes (`attr_grp` of `power_supply_config`), one value or
+one list per file, as sysfs asks:
+
+| attribute | mode | what |
+|---|---|---|
+| `model_q_full`, `model_e_full`, `model_r`, `model_v_end`, `model_i_end` | rw | the model in use |
+| `model_table_uv`, `model_table_ua` | rw | the table: the voltages, the currents, one list each, the same length |
+| `model_source` | ro | `default` or `loaded` |
+| `model_commit` | wo | `1`: the values written to `model_*` are checked and taken together; a bad one: `-EINVAL` and a line in dmesg; the model in use stays |
+| `run_q_full`, `run_e_full`, `run_r`, `run_v_end`, `run_i_end`, `run_table_uv`, `run_table_ua`, `run_r_steps`, `run_r_full` | ro | the run learned, as it is (D29); there after `done` |
+| `learn_state` | ro | `idle`, `full`, `learning`, `done` |
+| `learn_charge`, `learn_energy`, `learn_seconds` | ro | the count of the learning that runs |
+| `axp_state` | ro | `ok`, `silent` |
+
+`run_r_full` is R at the step from rest when the charger goes out (the
+start of the discharge logs); it is not used by the model.
+
+The uevent at the silence: `UCONSOLE_SOFT_BATTERY_EVENT=axp_silent`,
+`UCONSOLE_SOFT_BATTERY_RUN=1` with a run, `0` with none (D19). The
+program reads the values from sysfs.
+
+The files of runs (`runs/<seq>.env`) and the output of `load` are lines
+`KEY=value`, the keys the names of the attributes in capitals:
+`RUN_Q_FULL=` in a run, `MODEL_Q_FULL=` from `load`. The rule of D13:
+
+```
+ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="uconsole-soft-battery", \
+  IMPORT{program}="/usr/bin/uconsole-soft-battery load", \
+  ENV{MODEL_Q_FULL}=="?*", \
+  ATTR{model_q_full}="$env{MODEL_Q_FULL}", ..., \
+  ATTR{model_table_ua}="$env{MODEL_TABLE_UA}", \
+  ATTR{model_commit}="1"
+```
+
+udev writes `ATTR{}` in the order of the rule, so `model_commit` comes
+last. `ENV{MODEL_Q_FULL}=="?*"`: with no valid run, `load` prints nothing
+and nothing is written.
+
+The values of C' and the step of R are parameters of the module,
+writable at run time: `/sys/module/uconsole_soft_battery/parameters/`.
+
 ### The memory of the learning
 
 Proposed. One allocation at the probe; no allocation in the work.
@@ -62,16 +115,16 @@ Proposed. One allocation at the probe; no allocation in the work.
 | the count: charge and energy (s64 each), time of the start, last sample | 32 B |
 | the end: `V_end`, `I_end`, time | 12 B |
 | the resistance `R`: the sum of dV/dI at steps of the current, the count | 16 B |
-| the model in use: 21 points of V and I under load, `Q_full`, `E_full`, `R`, `V_end`, `I_end` | about 200 B |
+| the model in use and the one written, not yet committed: 41 points of V and I each, `Q_full`, `E_full`, `R`, `V_end`, `I_end` (41 if taken) | about 2 × 350 B |
 
-About 2.2 KiB in all. The step is `charge_full_design` / 256 (35 mAh
+About 2.9 KiB in all. The step is `charge_full_design` / 256 (35 mAh
 for 9 Ah), so 512 points hold up to 2 × the design. Past that the count
 goes on and no point is added; dmesg says it once.
 
 The module makes the model at `done` (D20), in integers:
 
-- `R`: the mean of dV/dI over pairs of samples 1 s apart where the
-  current moved by 200 mA or more (proposed values);
+- `R`: dV/dI over pairs of samples 1 s apart where the current moved;
+  the step and the part of the discharge: "Open questions", the values;
 - the table: 21 points, one each 5 % of the charge out, taken from the
   curve between its points; each point is the mean V and the mean I
   under load, as measured (D22). No OCV: the AXP gives the voltage
@@ -157,8 +210,7 @@ its values; they are not in dmesg.
 - A rule of udev on the uevent `axp_silent` runs the program right in
   `RUN` (D27): `RUN+="/usr/bin/uconsole-soft-battery save"`. No service.
   The program writes its lines into `/dev/kmsg`, next to the lines of the
-  module in dmesg. At `done` the module puts the new model into its
-  attributes `model_*`, the ones the rule of D13 writes at boot, and sets
+  module in dmesg. At `done` the module puts the run into its attributes `run_*` and sets
   `learn_state` to `done`; the program reads them from sysfs.
 - The sandbox of `systemd-udevd.service` on the device lets it: no
   `ProtectSystem`, no `ReadOnlyPaths`; `AF_UNIX` for `systemctl`;
@@ -181,19 +233,15 @@ its values; they are not in dmesg.
 - The model reaches the module at boot by a rule of udev (D13), on the
   event `add` of the power supply; the program makes the mean there
   (D30):
-  ```
-  ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="uconsole-soft-battery", \
-    IMPORT{program}="/usr/bin/uconsole-soft-battery load", \
-    ATTR{model_q_full}="$env{Q_FULL}", ATTR{model_table}="$env{TABLE}", ...
-  ```
-  `IMPORT{program}` takes the lines `KEY=value` the program prints;
+  the rule is in "The interface". `IMPORT{program}` takes the lines `KEY=value` the program prints;
   `ATTR{}` writes them into the attributes of the device. The module adds
   its attributes to the power supply by `attr_grp` of
   `power_supply_config`. It works for `=m` and `=y`: for a module built
   in the event comes before udev, and the coldplug of
   `systemd-udev-trigger` gives it again. Until the write the module goes
   by the default model (some seconds with `=y`). A new model makes the
-  module work out the start level by the voltage again.
+  module work out the start level by the voltage again. The names and the
+  form of the attributes: "The interface".
 - `load` (D30):
   1. lists `runs/` and takes the last N valid runs by `seq`, by the names
      only (`*.invalid.env` are not taken);
@@ -268,7 +316,7 @@ sum is old. The version stays until a first release. A tarball of a tag
     the date is a key inside, not the order (the clock may be wrong);
   - the mean of the last 5 valid runs; N an option of the program. No
     age limit: at boot the clock may be wrong;
-  - a plain mean: each value; each point of the table (one per 5 % of
+  - a plain mean: each value; each point of the table (one per step of
     the run's own `Q_full`) as a pair (V, I); `V_end`, `I_end` as a pair;
   - `reset` moves `runs/` to `runs.<seq>/`;
   - `load` by hand writes the attributes `model_*` at once, after a
@@ -290,5 +338,3 @@ sum is old. The version stays until a first release. A tarball of a tag
   - C': the means of V and I over 30 s, as D23; the weight of the voltage
     from 50 % (0) to 20 % (full), in place of 30 % and 10 %; f in 0.5..2,
     as D23.
-- The end of a charge on the device: a log of `axp-log` on the charger
-  through the end of a charge, to see 0x01 go from 0x70 to 0x30.
