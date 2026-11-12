@@ -84,12 +84,33 @@ Only in B, proposed (`discussion.md`, "Variant B in full"):
   loaded again. No rule of udev for it. Proposed: a read each second, not
   inotify (sysfs does not tell of new directories by inotify) and not the
   netlink of uevents (a crate or code of sockets).
-- QB4. The learning in the daemon: the start at `status` from `Full` to
-  `Discharging`; R by the step at the start (D34); the curve at full
-  resolution in its memory (no bins); the end at `health` = `Dead` or the
-  reads failing; then the run kept, the mean made, `systemctl poweroff
-  --force` (D49). Kept in memory only, as D16; a restart of the daemon
-  drops a learning (a line in its log).
+- QB4. The learning in the daemon, proposed in full (`discussion.md`,
+  "QB4: the learning of the daemon in full"). The daemon reads each 10 s
+  (D70) `charge_counter`, `voltage_now`, `current_now`, `status`, `health`:
+  - the start: `status` was `Full` at the last read and is not now (the
+    charger out, D39, D40); the voltage and the current at rest are those
+    of that last `Full` read;
+  - R (D34): at 60 s after the start, by the 6 reads of it: within 1 mOhm
+    of the R of the logs at 1 s (76.7 / 78.7 / 80.5 against 76.6 / 78.8 /
+    80.2 mOhm); 0 if the step is under 300 mA;
+  - the charge: `charge_counter` at the read − at the start; the energy:
+    V × I × dt of its own reads (the error of 10 s: 0.2 % at most, "Each
+    second, or events"); the curve: each read kept (V, I, the charge out):
+    some 2000 reads a run, some tens of KiB;
+  - the charger in during a run: the count goes on, net, by
+    `charge_counter`; the full state again: the run starts again (D14);
+  - the end: `health` = `Dead`. `V_end`, `I_end`: the means of the last 3
+    good reads before the first failed one (30 s, D35); the model of the run
+    (D20, D22): `Q_full`, `E_full`, R, the table of 21 points by the means
+    of 60 s about each 5 %; the check (D54); `runs/` or `invalid/` (D45);
+    the mean model (D29, D48); the model as a piece of the device tree in
+    the journal (D75); `systemctl poweroff --force` (D49);
+  - the module gone in a run (the directory of our battery not there, or
+    `charge_counter` smaller than at the start by more than the run could
+    give): the run is dropped, a line in the journal; the daemon waits for
+    the module and gives it the model when it comes (D68);
+  - a suspend: the run dropped, the daemon exits (D66, D69); a stop of the
+    daemon: the run lost (in memory, D16).
 - QB5, decided (D66, D69): a growth of `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`
   drops the learning (D33), and the daemon exits (exit code 0; no
   `Restart=`). After that, in the same boot: no learning of a later full
@@ -478,7 +499,7 @@ not the curve.
 
 ## Open questions
 
-- QB4: variant B, in "Two variants".
+- QB4: variant B, in "Two variants", proposed in full.
 - Q12, decided (D75). The model in the device tree (D74):
   - the table and R: the standard `ocv-capacity-table-0` and
     `factory-internal-resistance-micro-ohms` of `battery@0`; the capacity:
