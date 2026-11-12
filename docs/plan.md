@@ -14,7 +14,7 @@ is written for A, as decided until then; what B changes is listed here.
 
 - **A: the module and the tools.** The module reads, counts, learns (the
   bins, R at the start, the model of the run), works out the level; the
-  program `uconsole-soft-battery` runs twice a cycle: `load` at boot by a
+  program `axp22x-soft-battery` runs twice a cycle: `load` at boot by a
   rule of udev, `save` at the silence by a rule of udev; no service.
 - **B: the module and a daemon of learning**, the daemon
   `axp22x-soft-battery` (D62). The module reads, counts
@@ -53,7 +53,7 @@ Only in B, proposed (`discussion.md`, "Variant B in full"):
   that would read the bus twice and lose bit 6 of 0x01 (`discussion.md`,
   "The daemon with the least tie to the module").
 - QB3. Start: a rule of udev on `add` of our battery, `TAG+="systemd"`,
-  `ENV{SYSTEMD_WANTS}="uconsole-soft-battery.service"`; the service
+  `ENV{SYSTEMD_WANTS}="axp22x-soft-battery.service"`; the service
   `Restart=always`. At its start the daemon writes the mean model
   (`model_*`, `model_commit`); no `IMPORT{program}`.
 - QB4. The learning in the daemon: the start at `status` from `Full` to
@@ -85,7 +85,7 @@ Only in B, proposed (`discussion.md`, "Variant B in full"):
   that device. The package blacklists `axp20x_battery`. No overlay, no
   node of its own; the kernel, its drivers, the device tree and
   `config.txt` are not changed (D32, D36).
-- One power supply of type Battery, `uconsole-soft-battery` (D26).
+- One power supply of type Battery, `axp22x-soft-battery` (D26).
 - One module: the set up, the count, the learning and the level (D24).
 
 ### What it reads, and how
@@ -290,31 +290,31 @@ file (`Documentation/filesystems/sysfs.rst`):
 
 D15: the list and the rule (a line at a change of state, not at each
 sample) are in `discussion.md`, "dmesg, the list after D33-D36". The
-prefix is `uconsole_soft_battery axp20x-battery-power-supply:`. A cycle
+prefix is `axp22x_soft_battery axp20x-battery-power-supply:`. A cycle
 gives about six lines.
 
 ### User space
 
-- The program `uconsole-soft-battery`, in Rust (D25), package
-  `sys-power/uconsole-soft-battery-tools` (D26).
+- The program `axp22x-soft-battery`, in Rust (D25), package
+  `sys-power/axp22x-soft-battery-tools` (D26).
 - At the silence: a rule of udev on `POWER_SUPPLY_HEALTH=Dead` (D43) runs
-  `uconsole-soft-battery save` right in `RUN` (D27); no service. The sandbox of udevd allows its work
+  `axp22x-soft-battery save` right in `RUN` (D27); no service. The sandbox of udevd allows its work
   (`discussion.md`, "The sandbox of udevd").
   - With no run: a forced power off (D19).
   - With a run: it checks it (proposed, Q6), keeps it as
-    `/var/lib/uconsole-soft-battery/runs/<seq>.env` (D29, D45), or, if it
+    `/var/lib/axp22x-soft-battery/runs/<seq>.env` (D29, D45), or, if it
     fails the check, `invalid/<seq>.env` (D45); `fsync` of the file and of
     its directory, then a forced power off. No mean here (D30).
   - Its lines go into `/dev/kmsg` (D27).
-- At boot: the rule on `add` of the power supply runs `uconsole-soft-battery
+- At boot: the rule on `add` of the power supply runs `axp22x-soft-battery
   load` by `IMPORT{program}` (D13, D30); `load` reads all runs each time
   (D31), makes the mean model and prints it; `ATTR{}` writes the draft,
   `ATTR{model_commit}="1"` last. No valid run: nothing is printed or
   written.
 
   ```
-  ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="uconsole-soft-battery", \
-    IMPORT{program}="/usr/bin/uconsole-soft-battery load", \
+  ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="axp22x-soft-battery", \
+    IMPORT{program}="/usr/bin/axp22x-soft-battery load", \
     ENV{MODEL_Q_FULL}=="?*", \
     ATTR{model_q_full}="$env{MODEL_Q_FULL}", ..., \
     ATTR{model_commit}="1"
@@ -336,20 +336,20 @@ gives about six lines.
 
 - Two packages (D6, D25); the source a copy in `files/` of each, made by a
   script of this repository, with its sum in the ebuild (D28).
-- The module: `sys-power/uconsole-soft-battery` (D26), `linux-mod-r1`,
+- The module: `sys-power/axp22x-soft-battery` (D26), `linux-mod-r1`,
   `virtual/dist-kernel`; it installs the module and
-  `/etc/modprobe.d/uconsole-soft-battery.conf`, `blacklist axp20x_battery`
+  `/etc/modprobe.d/axp22x-soft-battery.conf`, `blacklist axp20x_battery`
   (D36). The ebuild stops with `CONFIG_BATTERY_AXP20X=y`
   (`linux_chkconfig_builtin`); the source has `#if
   IS_BUILTIN(CONFIG_BATTERY_AXP20X)` and `#error`.
-- The program: `sys-power/uconsole-soft-battery-tools` (D26), `cargo`; the
+- The program: `sys-power/axp22x-soft-battery-tools` (D26), `cargo`; the
   program and both rules of udev. Crates and fat LTO (D50): the ebuild
   takes the crates from crates.io by `CRATES` (`cargo_crate_uris`), each
   with its line in `Manifest`; that `lto = "fat"` of `Cargo.toml` holds
   under the `cargo` eclass is to see in the log of the build.
-- The guard (D57): `uconsole_axp_guard`, a module of its own in the
+- The guard (D57): `axp22x_guard`, a module of its own in the
   package of the module, loaded by
-  `/usr/lib/modules-load.d/uconsole-axp-guard.conf`; each 10 s it reads
+  `/usr/lib/modules-load.d/axp22x-guard.conf`; each 10 s it reads
   `online` of `axp20x-ac`; 12 errors in a row → `hw_protection_trigger()`;
   `system_freezable_wq`, no code of suspend; about 60 lines.
 - Put off: the module in the tree of the kernel,
@@ -419,14 +419,6 @@ not the curve.
 
 ## Open questions
 
-- Q9. The rest of the names after D62, proposed by one rule, `axp22x-`
-  for the AXP the module serves: the module `axp22x_soft_battery`; the
-  power supply `axp22x-soft-battery`; the package of the module
-  `sys-power/axp22x-soft-battery`; the package of user space
-  `sys-power/axp22x-soft-battery-tools` (A) or `-daemon` (B); the program
-  of A `axp22x-soft-battery` too; the state `/var/lib/axp22x-soft-battery/`;
-  the guard `axp22x_guard`; the file of modprobe
-  `axp22x-soft-battery.conf`.
 - QB1, QB3-QB6: variant B, in "Two variants".
 
 ## Fixed on the review
@@ -454,7 +446,7 @@ What did not agree, 2026-11-12, and how it stands now:
 - "The values of C' and the step of R are parameters": the step of R is
   gone (D34); the parameters are listed in "The interface".
 - dmesg: "four lines a cycle" and "`dev_*` of the device
-  `uconsole-soft-battery`" against "six lines" and the device of the cell:
+  `axp22x-soft-battery`" against "six lines" and the device of the cell:
   six lines, the cell.
 - The start level: "means over 30-60 s" against 30 s of D23: 30 s.
 - "Open questions" still held the table of 21 points (D22), C' (D23) and
