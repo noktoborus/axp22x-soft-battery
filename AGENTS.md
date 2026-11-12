@@ -83,6 +83,9 @@ THEN a part of a body that needs a comment becomes a function with a
 EX+  /* No AXP answers on the bus: all three reads end in -ENXIO. */
      static bool sb_axp_silent(const int err[3])
 EX-  /* the silence (D41) */ inside sb_work()
+RULE module.overlay : each property of `axp22x-soft-battery.dts` has a
+     comment in simplified english: what it is, its unit, what values the
+     module takes; never a number of docs/decisions.md
 RULE module.poweroff : the module does not power the system off; user
      space decides it
 EXC  the guard of D71: `hw_protection_trigger()` at 12 failed samples
