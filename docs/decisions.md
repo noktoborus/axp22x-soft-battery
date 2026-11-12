@@ -18,3 +18,6 @@ not answered yet is in `plan.md`, "Open questions".
 | D11 | 2026-11-12 | user | The module never powers the system off; only user space decides. |
 | D12 | 2026-11-12 | user | No more logic and no workarounds in the kernel module. A guard against a failure of user space, when it is needed, is a separate module. |
 | D13 | 2026-11-12 | user | The model reaches the module at boot by a rule of udev on the event `add` of its power supply: `IMPORT{file}` of `/var/lib/uconsole-battery/model.env`, `ATTR{}` into the attributes of the module. Not modprobe.d: it gives no options to a module built in. |
+| D14 | 2026-11-12 | user | The learning starts each time a charge ends in full; no start by hand. |
+| D15 | 2026-11-12 | user | The module tells its events in dmesg: it is loaded, the model is awaited, the learning started, the learning done, and others (the list in `plan.md`). |
+| D16 | 2026-11-12 | user | While the learning runs, it is kept in the memory of the module only; the memory is to be small. At its end a uevent makes user space write the state file. |
