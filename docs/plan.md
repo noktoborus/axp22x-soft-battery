@@ -127,7 +127,7 @@ its values; they are not in dmesg.
   where V_t(q) − (I − I_t(q)) × R = V. R only moves the curve by the
   difference of the currents, not by the whole current. Nothing of the
   charge is saved over a boot (D16).
-- The voltage corrects the count slowly, more at a low charge.
+- The voltage corrects the count: see "Open questions", the level after D21.
 - The error of the voltage, from the table of `discharge-cm5.md`: the
   voltage moves about 75 mV per 10 % at 60-40 %, about 130 mV per 10 %
   at 20-0 %. An error of 20 mΩ in R at a difference of 0.5 A from the
@@ -201,18 +201,20 @@ its values; they are not in dmesg.
 
 ## Open questions
 
-- 0 %: (A) the end of the learned run (proposed), or (B) the point
-  where V_t(q) − (I − I_t(q)) × R reaches `V_end` at the mean current
-  of now, or (C) A
-  with B blended in near the end. Worked out in `discussion.md`, "What
-  0 % is".
-  - A: monotone and simple; off by about 3-5 % at the end when the load
-    differs from that of the learning. Each learning moves the model to
-    the load of use (D14).
-  - B: right at a heavier load; the level jumps with the load and is
-    not monotone; no data past the learned end, so no help at a lighter
-    load; one R for all charge and temperature.
-  - C: more logic in the module (D12).
+- How the count and the voltage make the level, now that the end is a
+  voltage (D21). Worked out in `discussion.md`, "The level after D21".
+  Proposed: C', the count scaled by the voltage:
+  - level by the count: (Q_full − out) / Q_full;
+  - level by the voltage: the point of the table under load, with the
+    means of V and I over 30 s;
+  - while the cells discharge, the level falls at the speed of the
+    count times f = (left by the voltage) / (left by the count), f held
+    in 0.5..2; the level never rises on a discharge;
+  - the voltage weighs nothing above 30 % and in full at 10 %;
+  - on the charger: the count only; the end of the charge sets 100 %.
+  The values (30 s, 0.5..2, 30 %, 10 %) are a first guess.
+- The table under load (V and I each 5 %) in place of a table of OCV:
+  proposed, not decided (`discussion.md`, "How to get OCV").
 - One module (count, learning, level) or two.
 - The program of user space: in the package of the module or in its own.
 - The line `dtoverlay=uconsole-battery` of `config.txt`: by
