@@ -257,10 +257,18 @@ gives about six lines.
     ATTR{model_q_full}="$env{MODEL_Q_FULL}", ..., \
     ATTR{model_commit}="1"
   ```
-- The mean model (D29, D35, D48; the rest proposed, Q6): `V_end` is the
+- The mean model (D29, D35, D48, D54): `V_end` is the
   highest of the runs in `runs/` (the last 5), + 50 mV; the other values
   and each pair (V, I) of the table: the mean of the same runs.
 - `/var` is to be mounted when the rule runs; one root partition gives it.
+- The files (D45-D48): `runs/` (the last 5: the mean and the highest
+  `V_end`), `archive/` (set aside by age by `load`, or by `reset`),
+  `invalid/` (failed the check).
+- The check of a run before `runs/` (D54): the checks of `model_commit`
+  (D43, D51).
+- `seq` (D52); `load --apply` (D53).
+- The crates (D50, D54): `lexopt` only; errors by
+  `Box<dyn std::error::Error>`; `lto = "fat"`, `codegen-units = 1`.
 
 ### The packages
 
@@ -295,33 +303,6 @@ gives about six lines.
 
 ## Open questions
 
-- Q6. The program:
-  - the files (D45-D48): `runs/` (the last 5, the mean, the highest
-    `V_end`), `archive/` (set aside by age by `load`, or by `reset`),
-    `invalid/`;
-  - the check of a run before `runs/`, proposed: the checks of
-    `model_commit` (D43): the lists of one length, the voltage falls along
-    the table, `Q_full` 0.5-50 Ah, R 10-500 mΩ or 0 (not learned, D34),
-    `V_end` from `voltage-min-design` of `battery@0` (`V_OFF`, D51) to 3.8 V. Not "30-200 % of `charge_full_design`": a wrong value
-    of the device tree would throw good runs away. A run that passes is
-    sure to pass `model_commit` as a part of the mean;
-  - `seq` (D52): 1 + the highest `seq` in the names of `runs/`,
-    `archive/`, `invalid/`, at `save`; 6 digits, `000001.env`; no file of a
-    counter;
-  - `load --apply` (D53): the same lines as `load`, written by the
-    program itself into `model_*` of
-    `/sys/class/power_supply/uconsole-soft-battery/`, then `model_commit` =
-    `1`; for a change of `runs/` with no boot. With no valid run it writes
-    `default` into `model_commit`: the module takes its default model
-    again (a word `model_commit` is to take besides `1`, D43);
-  - the crates (D50), proposed: `lexopt` (the commands) only. Errors by
-    `std`: `Result<T, Box<dyn std::error::Error>>`; `?` takes the errors of
-    `std` as they are, a message of our own is `format!(...).into()`, the
-    path of a file added by `map_err`; `main` writes the error into
-    `/dev/kmsg` and to stderr and returns `ExitCode::FAILURE`. The rest by
-    `std`: the files, `fsync` of a file and of a
-    directory (`File::sync_all`), `/dev/kmsg`, `systemctl`;
-    `[profile.release]` `lto = "fat"`, `codegen-units = 1`.
 - Q7. Three properties: `power_now` = V × I (without it upower shows no
   time, "What does patch 0002 do"); `time_to_empty_now` by the mean
   current of 60 s; `capacity_level` `Critical` under 5 %, `Low` under
