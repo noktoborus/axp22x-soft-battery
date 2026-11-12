@@ -28,11 +28,15 @@ Not decided where it says "proposed".
   I2C client, then `dev_get_regmap()`.
 - The count: every 1 s, the charge and the energy (V × I × dt) by
   trapezoids. The charge is net: in minus out.
-- The marker of the full charge. Proposed: in the read of each 1 s,
-  bit 6 of 0x01 (charging) goes from 1 to 0 while bit 7 of 0x00 (ACIN
-  present) is 1 and the voltage is 4.15 V or more; and the same state at
-  the probe counts as a marker. No IRQ. (`discussion.md`, "The end of the
-  charge".)
+- The marker of the full charge. Proposed: the full state, not its
+  edge: in the read of each 1 s, bit 7 of 0x00 (ACIN present) is 1, bit 6
+  of 0x01 (charging) is 0, the voltage is 4.15 V or more. Each sample in
+  that state starts the learning again, so the learning starts in fact
+  at the last full sample before the charger goes out; a probe in that
+  state needs nothing more. The three logs that start full show it:
+  0x00 = 0xc4, 0x01 = 0x30, 4204-4205 mV, 12-50 mA. No IRQ.
+  (`discussion.md`, "The end of the charge", "The start of the
+  discharge logs".)
 - The end: the AXP does not answer on I2C, some reads in a row.
 - States of the learning: `idle` → `learning` at each end of a full
   charge (D14); `learning` counts; a new end of a charge starts it again;
