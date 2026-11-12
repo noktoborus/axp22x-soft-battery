@@ -154,7 +154,9 @@ its values; they are not in dmesg.
   writable and executable (`MemoryDenyWriteExecute`).
 - The program takes two events (D19):
   - the AXP silent: a forced power off;
-  - the AXP silent and a model: it writes the model into the state file
+  - the AXP silent and a model: it keeps the run in
+    `/var/lib/uconsole-soft-battery/runs/<date>.env`, makes the mean
+    model of the runs (D29) and writes it into the state file
     `/var/lib/uconsole-soft-battery/model.env` (the attributes `model_*`, as
     they are), `fsync` of the file and of its directory, then a forced
     power off.
@@ -243,13 +245,9 @@ sum is old. The version stays until a first release. A tarball of a tag
   off. To check on the device: a missing file of `include` does not stop
   the boot; a section in the included file. Else: a USE flag of
   `uconsole-pi-firmware`.
-- The capacity depends on the load (9067 mAh at 1.6 A): keep the last run,
-  or a mean of some runs; and who makes the mean. Worked out in
-  `discussion.md`, "The last run or a mean". Proposed now: the program
-  keeps each run (`runs/<date>.env`) and writes into `model.env` the mean
-  of the last N (N = 5, an option of the program), the pairs (V, I) of the
-  table as pairs. The module gives the run as it learned it, with no mix.
-  A new set of cells: `uconsole-soft-battery reset` moves the runs away.
+- The mean model (D29): proposed, all runs kept (about 500 B each), the
+  mean of the last 5, N an option of the program; each value, and the
+  pairs (V, I) of the table as pairs.
 - The values of the model: the step of the current for `R` (200 mA), the
   21 points of the table.
 - Which register of the AXP228 marks the end of the charge.
