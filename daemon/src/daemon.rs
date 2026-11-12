@@ -103,7 +103,7 @@ impl<'a> Daemon<'a> {
     }
 
     fn start_discharge(&mut self, rest: Option<(f64, Reading)>) {
-        let r_start = match battery::design("internal_resistance") {
+        let r_start = match battery::dt_resistance() {
             Ok(r) => r,
             Err(e) => {
                 println!("no run of a discharge: {e}");

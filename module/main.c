@@ -147,6 +147,7 @@ static int sb_resume(struct device *dev)
 	struct sb *sb = dev_get_drvdata(dev);
 
 	sb_mean_reset(sb);
+	sb_r_forget_step(sb);
 	dev_info(dev, "resume\n");
 	sb_sample_now(sb);
 	return 0;

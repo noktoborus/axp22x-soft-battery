@@ -91,7 +91,10 @@ fn or_design(value: Option<i64>, name: &str, flag: &str) -> Result<i64> {
 }
 
 pub fn run(dir: &Path, log: &Path, r_start: Option<i64>, v_min: Option<i64>) -> Result<ExitCode> {
-    let r_start = or_design(r_start, "internal_resistance", "--r-start")?;
+    let r_start = match r_start {
+        Some(r) => r,
+        None => battery::dt_resistance().map_err(|e| format!("{e}; give --r-start"))?,
+    };
     let v_min = or_design(v_min, "voltage_min_design", "--v-min")?;
     let raw = fs::read(log).map_err(|e| format!("{}: {e}", log.display()))?;
     let samples: Vec<Sample> = text(&raw).lines().filter_map(sample).collect();

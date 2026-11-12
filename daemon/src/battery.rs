@@ -11,6 +11,7 @@ use crate::Result;
 pub const BATTERY: &str = "/sys/class/power_supply/axp22x-soft-battery";
 const HWMON: &str = "/sys/class/hwmon";
 const HWMON_NAME: &str = "axp_hwmon";
+const DT_CELLS: &str = "/proc/device-tree/axp22x-soft-battery-cells";
 const DT_CURVE: &str = "/proc/device-tree/axp22x-soft-battery-cells/ocv-capacity-table-0";
 
 /// The status of the module, as `status` names it.
@@ -107,6 +108,15 @@ pub fn find_hwmon() -> Option<PathBuf> {
         .flatten()
         .map(|e| e.path())
         .find(|p| read_value(p, "name").map(|n| n == HWMON_NAME).unwrap_or(false))
+}
+
+/// R of the device tree, the start of the count of R: the module starts
+/// from it too, and learns its own.
+pub fn dt_resistance() -> Result<i64> {
+    let path = Path::new(DT_CELLS).join("factory-internal-resistance-micro-ohms");
+    let raw = fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let cell: [u8; 4] = raw.as_slice().try_into().map_err(|_| format!("{}: not one cell", path.display()))?;
+    Ok(u32::from_be_bytes(cell) as i64)
 }
 
 /// The temperature of the PMIC, in m°C.

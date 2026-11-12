@@ -7,6 +7,7 @@
  *	dt.c	the values of the device tree and their checks
  *	pmic.c	the registers of the PMIC
  *	level.c	the level of the charge by the voltage
+ *	r.c	R of the cells, learned while it runs
  *	work.c	the samples, the silence of the AXP, the guard
  *	props.c	the power supply and its properties
  */
@@ -29,6 +30,11 @@
 /* The curve of the charge has at most 16 pairs <uA percent>. */
 #define SB_CV_MAX_PAIRS		16
 
+/* R is a mean of the last 8 steps, and stays within 10..500 mOhm. */
+#define SB_R_WINDOW		8
+#define SB_R_MIN_UOHM		10000
+#define SB_R_MAX_UOHM		500000
+
 struct device;
 struct device_node;
 struct iio_channel;
@@ -48,6 +54,7 @@ struct sb_snapshot {
 	int capacity;
 	int voltage_uv;
 	int current_ua;
+	int r_uohm;
 };
 
 struct sb {
@@ -83,6 +90,16 @@ struct sb {
 	int prev_status;
 	bool at_zero;
 
+	/* R in use, learned by the steps of the current (r.c). */
+	int r_uohm;
+	int r_steps[SB_R_WINDOW];
+	int r_n;
+	int r_pos;
+	bool r_prev_valid;
+	bool r_prev_supplied;
+	int r_prev_v_uv;
+	int r_prev_i_ua;
+
 	/* The samples left at a short period after the charger came or went. */
 	atomic_t fast_left;
 
@@ -101,6 +118,11 @@ int sb_read_charging(struct sb *sb, bool *charging);
 
 /* level.c */
 int sb_level(struct sb *sb, int status, bool supplied, int v_uv, int i_ua);
+
+/* r.c */
+void sb_r_init(struct sb *sb);
+void sb_r_forget_step(struct sb *sb);
+void sb_r_add(struct sb *sb, bool supplied, int v_uv, int i_ua);
 
 /* work.c */
 void sb_work(struct work_struct *work);

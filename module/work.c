@@ -90,6 +90,7 @@ static void sb_enter_silence(struct sb *sb, int err)
 	scoped_guard(mutex, &sb->lock)
 		sb->snap.silent = true;
 	sb_mean_reset(sb);
+	sb_r_forget_step(sb);
 	dev_warn(sb->dev, "AXP silent: %u samples failed, last %d\n",
 		 sb->failed, err);
 	power_supply_changed(sb->psy);
@@ -198,6 +199,7 @@ static bool sb_store(struct sb *sb, int status, int level,
 	sb->snap.capacity = level;
 	sb->snap.voltage_uv = s->v_mv * 1000;
 	sb->snap.current_ua = (s->chrg_ma - s->dischrg_ma) * 1000;
+	sb->snap.r_uohm = sb->r_uohm;
 	return changed;
 }
 
@@ -234,6 +236,7 @@ static void sb_take_sample(struct sb *sb, const struct sb_sample *s)
 		return;
 	}
 
+	sb_r_add(sb, supplied, s->v_mv * 1000, (s->chrg_ma - s->dischrg_ma) * 1000);
 	m = sb_add_mean(sb, supplied, s);
 	level = sb_hold_level(sb, supplied,
 			      sb_level(sb, status, supplied, m.v_uv, m.i_ua));

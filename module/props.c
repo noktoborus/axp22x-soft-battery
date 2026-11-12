@@ -60,9 +60,6 @@ static int sb_get_fixed(struct sb *sb, struct power_supply_battery_info *info,
 	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX:
 		val->intval = info->constant_charge_current_max_ua;
 		return 0;
-	case POWER_SUPPLY_PROP_INTERNAL_RESISTANCE:
-		val->intval = info->factory_internal_resistance_uohm;
-		return 0;
 	case POWER_SUPPLY_PROP_SCOPE:
 		val->intval = POWER_SUPPLY_SCOPE_SYSTEM;
 		return 0;
@@ -99,6 +96,9 @@ static int sb_get_now(struct sb *sb, enum power_supply_property psp,
 	case POWER_SUPPLY_PROP_POWER_NOW:
 		val->intval = div_s64((s64)sb->snap.voltage_uv * sb->snap.current_ua,
 				      1000000);
+		return 0;
+	case POWER_SUPPLY_PROP_INTERNAL_RESISTANCE:
+		val->intval = sb->snap.r_uohm;
 		return 0;
 	case POWER_SUPPLY_PROP_ENERGY_NOW:
 		val->intval = div_u64((u64)sb->energy_full_uwh * sb->snap.capacity, 100);
@@ -155,6 +155,7 @@ static int sb_init(struct power_supply *psy)
 	ret = sb_read_dt(sb) ?: sb_setup_pmic(sb);
 	if (ret)
 		return ret;
+	sb_r_init(sb);
 	sb_tell_bound(sb);
 	return 0;
 }

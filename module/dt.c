@@ -16,8 +16,6 @@
 #include "sb.h"
 
 /* Bounds of the checks, not settings. */
-#define SB_R_MIN_UOHM		10000
-#define SB_R_MAX_UOHM		500000
 #define SB_END_MAX_UV		3800000
 
 static int sb_refuse(struct sb *sb, const char *name, long long val,
