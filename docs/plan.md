@@ -451,12 +451,15 @@ not the curve.
 ## Open questions
 
 - QB1, QB4: variant B, in "Two variants".
-- Q10. The period of the work of the module, proposed 10 s in place of 1 s
-  (`discussion.md`, "Each second, or events"): the count loses 0.2 % at
-  most even at 60 s; the silence then takes 6 samples × 10 s, about 1 min
-  (D41 changed), the guard at 2 min stays after it; the charger by the IRQ
-  of `axp20x-ac` as now; 0x01 at each sample on the charger as now; the
-  daemon reads each 10 s too. A parameter `sample_ms`.
+- Q11. The name of the property of D70, proposed
+  `axp22x-soft-battery,sample-interval-ms` on the node
+  `battery-power-supply` (the module reads it by
+  `device_property_read_u32()` on its own device). To set it, the overlay of
+  the device changes (a patch of the series, D36 kept no change of the
+  device tree; with no property, 10 s). And whether the other values
+  (`end_uv`, `r_uohm`, `full_margin_uv`, `full_current_ua`,
+  `silent_samples`, C') go to the device tree too, or stay parameters of the
+  module.
 
 ## Fixed on the review
 
