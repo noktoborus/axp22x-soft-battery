@@ -38,12 +38,12 @@ agree is listed at the end, "Fixed on the review".
 - The values of `battery@0` (the current of the charge, the voltages,
   `charge_full_design`): `power_supply_get_battery_info()` on the node of
   the cell, which has `monitored-battery` (D36).
-- The charger in or out. Proposed (Q1, D37): from `axp20x-ac` of
-  `axp20x_ac_power`, by its IRQ: our power supply names it in
-  `supplied_from`, and the class calls our `external_power_changed()` at
-  each change; no read of 0x00.
-- Bit 6 of 0x01 (charging): by `dev_get_regmap(dev->parent)` (D36); no
-  driver gives it. Proposed (Q1, D37): read only while the charger is in.
+- The charger in or out (D39): from `axp20x-ac` of `axp20x_ac_power`, by
+  its IRQ: our power supply names it in `supplied_from`, and the class
+  calls our `external_power_changed()` at each change; no read of 0x00.
+- No read of 0x01 (D39): the full state is told by the current of the
+  charge. The regmap of the parent is used only for the set up at the
+  probe.
 - At each probe the module sets the PMIC up (D5, D36): the current of the
   charge (2.1 A of `battery@0`), `V_OFF` (0x31), the voltage of the full
   charge, and the five writes of Rex of `axp20x_power_probe` (0x30, 0x32,
@@ -72,22 +72,19 @@ Proposed (Q3). The scheme: desk `uconsole-soft-battery-work` of showcase,
 
 ### The marker of the full charge
 
-Proposed (Q1).
-
-- The full state, not its edge: the charger in, bit 6 of 0x01 = 0, the
-  voltage at least `voltage-max-design` − 50 mV (4.15 V for 4.2 V),
-  `full_margin_uv` a parameter. The 50 mV: under the lowest full voltage
-  of a chip (4.2 V − 0.5 %, the datasheet), over the voltage where the
-  AXP charges again (4.1 V); a false marker costs at most about 4 % of
-  one run.
-- Each sample in the full state starts the learning again, silently; the
-  learning so starts at the last full sample before the charger goes
-  out. A probe or a resume in that state needs nothing more.
-- `status`: `Charging` while bit 6 of 0x01 is 1; `Full` in the full
-  state; `Not charging` with the charger in, bit 6 = 0, under the
-  threshold; `Discharging` with no charger. The driver of now says
-  `Charging` in the full state ("How the system learns of a full charge
-  now").
+- The full state (D39): the charger in, the current of the charge (IIO)
+  under 100 mA, the voltage at least `voltage-max-design` − 50 mV
+  (`full_margin_uv`). The AXP ends a charge at 10-15 % of the charge
+  current (210-315 mA at 2.1 A); in the full state the logs show 12-50 mA;
+  so the current falls through 100 mA once, at the end of the charge.
+- Each sample in the full state starts the learning again, silently. The
+  learning starts in fact at the edge of the charger going out
+  (`external_power_changed()`, `online` 1 → 0) when the last sample before
+  it was in the full state (`discussion.md`, "What starts the learning").
+- `status`, proposed (Q1): `Full` in the full state; `Charging` with the
+  charger in and not full; `Discharging` with no charger. `Not charging`
+  is not used: with no read of 0x01 a charge stopped by the AXP and a
+  charge that runs are not told apart, but by the current.
 
 ### The learning
 
@@ -249,10 +246,8 @@ gives about six lines.
 
 ## Open questions
 
-- Q1. The marker of the full charge and the charger (proposed above): the
-  full state with `voltage-max-design` − 50 mV; `status`; the charger by
-  `external_power_changed()` from `axp20x-ac` (`supplied_from`) in place of
-  a read of 0x00; 0x01 read only while the charger is in.
+- Q1. `status` by the full state and the charger: `Full`, `Charging`,
+  `Discharging` (the marker itself: D39).
 - Q2. The silence: 3 failed reads in a row, then the work stops.
 - Q3. The work in time: one work each 1 s; one mutex, for sums and copies
   only; `power_supply_changed()` at a change of `status` or of 1 %.
