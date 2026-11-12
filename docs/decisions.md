@@ -84,3 +84,4 @@ not answered yet is in `plan.md`, "Open questions".
 | D77 | 2026-11-12 | user | Variant B: the program `axp22x-soft-battery` has the modes `daemon` (runs as the daemon: learns, gives the model to the module) and `gen-dts` (writes a piece of the device tree with the model). |
 | D78 | 2026-11-12 | user | QB1 confirmed: the module of variant B as `plan.md`, "Two variants", QB1, with D70-D76. |
 | D79 | 2026-11-12 | user | The package `sys-power/axp22x-soft-battery-daemon`: the service is enabled by a preset of systemd; no rule of udev; the unit has the service started before upower (`Before=upower.service`). |
+| D80 | 2026-11-12 | user | Variant B is made first; the discussion goes on. |

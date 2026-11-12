@@ -9,7 +9,7 @@ agree is listed at the end, "Fixed on the review".
 
 ## Two variants
 
-From 2026-11-12 the plan splits into two variants (D61). The design below
+From 2026-11-12 the plan splits into two variants (D61); B is made first (D80). The design below
 is written for A, as decided until then; what B changes is listed here.
 
 - **A: the module and the tools.** The module reads, counts, learns (the
@@ -512,7 +512,6 @@ not the curve.
   the start, not the write of the model; with `notify` upower starts after
   the write. `READY=1` is one datagram to `$NOTIFY_SOCKET`
   (`std::os::unix::net::UnixDatagram`), no crate.
-- Which variant is made first, A or B (D61).
 
 ## Fixed on the review
 
