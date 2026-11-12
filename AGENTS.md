@@ -23,8 +23,9 @@ RULE linux = the research of the kernel: the series of the kernel, the
 RULE hardware = uconsole/hardware: the notes on the PMIC, the
      gauge, the discharge, the tool axp-log
 THEN a fact from there is cited by its path, not copied here
-RULE state : no code yet; the design of variant B is in `docs/plan.md`;
-     the steps of the work are next
+RULE state : the packages and skeletons of the code are made; the module
+     and the program do no work yet; the design of variant B is in
+     `docs/plan.md`
 REF  docs/plan.md
 
 ## Layout
@@ -32,6 +33,17 @@ REF  docs/plan.md
 RULE layout.tools = tools/, scripts that read logs of the device for the
      design; each listed in README.md, "Tools"
 RULE layout.docs = docs/, the documents (below)
+RULE layout.module = module/, the source of the package
+     `sys-power/axp22x-soft-battery`: the module, its Makefile, the overlay
+     `axp22x-soft-battery.dts`, the file of modprobe.d
+RULE layout.daemon = daemon/, the source of the package
+     `sys-power/axp22x-soft-battery-daemon`: the crate, the unit, the preset
+RULE layout.package : `package.sh` copies module/ and daemon/ (the files in
+     git) into files/ of the two packages and writes the sums (D28)
+THEN after a change of module/ or daemon/, commit, then `./package.sh`;
+     `./package.sh --check` says if files/ is behind
+THEN a new crate in Cargo.lock goes into CRATES and the Manifest of the
+     ebuild of the daemon
 
 ## Documents
 

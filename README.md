@@ -1,12 +1,14 @@
 # axp22x-soft-battery
 
 The battery of the uConsole with a CM5, counted in software ("soft"),
-not by the gauge of the PMIC: a kernel module that learns the
-cells from a full charge down to the point where the PMIC AXP228 goes
-silent, and shows the level of the charge by what it learned. User space
-saves the model and powers the system off.
+not by the gauge of the PMIC: a kernel module that shows the level of
+the charge by a model of the device tree, and a daemon of user space that
+learns the cells from a full charge down to the point where the PMIC
+AXP228 goes silent, writes the curves as an overlay, and powers the system
+off.
 
-State: the design is in work; no code yet.
+State: the packages and skeletons of the code are made; the module and
+the program do no work yet.
 
 ## Files
 
@@ -16,6 +18,9 @@ State: the design is in work; no code yet.
 | `docs/decisions.md` | what is decided, numbered |
 | `docs/plan.md` | the design as proposed, the steps, the open questions |
 | `docs/discussion.md` | the log of the discussion, by date |
+| `module/` | the module, its `Makefile`, the overlay `axp22x-soft-battery.dts`, the file of modprobe.d |
+| `daemon/` | the program `axp22x-soft-battery` (Rust), its unit and preset |
+| `package.sh` | copies `module/` and `daemon/` into `files/` of `sys-power/axp22x-soft-battery` and `sys-power/axp22x-soft-battery-daemon` of repo-uconsole, writes the sums; `--check` |
 
 ## Related
 

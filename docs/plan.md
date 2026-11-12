@@ -344,8 +344,11 @@ user.
    look at `/proc/device-tree` on the device confirms them.
 2. Done: the scheme of B on the desk of showcase,
    `shots/3-variant-b.scheme`.
-3. The packages: the script of the copy, the two ebuilds; `linux-mod-r1`
-   and `cargo` in the cross build of unidev.
+3. Done: the packages (D108): `package.sh`, the two ebuilds, skeletons
+   of the module and of the program, the overlay of the package. Left:
+   `linux-mod-r1` and `cargo` in the cross build of unidev (no docker
+   here; the module not compiled yet: this container has no flex and no
+   bison for the tree of the kernel).
 4. The module.
 5. The program: `import` first (the three logs), then `gen-dts`, then
    `daemon`.

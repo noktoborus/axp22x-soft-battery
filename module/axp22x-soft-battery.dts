@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * The settings and the model of axp22x_soft_battery (D106): the module has
+ * no default of its own, each value is here. In config.txt after the
+ * overlay of the device:
+ *
+ *	dtoverlay=clockworkpi-uconsole-cm5
+ *	dtoverlay=axp22x-soft-battery
+ *
+ * The overlay of the curves from `axp22x-soft-battery gen-dts` comes after
+ * this one. The current of the charge, V_OFF and the voltages of design
+ * are in battery@0 of the overlay of the device.
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2712";
+
+	fragment@0 {
+		target-path = "/battery@0";
+		__overlay__ {
+			/* The mean of the three logs to the silence, R 87 mOhm
+			 * (tools/make-curve.py, D59); the PMIC at 24 C in the one
+			 * log that has its temperature.
+			 */
+			ocv-capacity-celsius = <24>;
+			ocv-capacity-table-0 =
+				<4221000 100>, <4119000 95>, <4093000 90>, <4084000 85>,
+				<4075000 80>, <4064000 75>, <4035000 70>, <3988000 65>,
+				<3934000 60>, <3897000 55>, <3868000 50>, <3837000 45>,
+				<3799000 40>, <3760000 35>, <3716000 30>, <3664000 25>,
+				<3608000 20>, <3554000 15>, <3499000 10>, <3437000 5>,
+				<3351000 0>;
+			factory-internal-resistance-micro-ohms = <87000>;
+		};
+	};
+
+	fragment@1 {
+		target-path = "/axi/pcie@1000120000/rp1/i2c@70000/pmic@34/battery-power-supply";
+		__overlay__ {
+			axp22x-soft-battery,energy-full-microwatt-hours = <24790000>;
+			axp22x-soft-battery,end-microvolt = <3200000>;
+			axp22x-soft-battery,sample-interval-ms = <10000>;
+			axp22x-soft-battery,full-margin-microvolt = <50000>;
+			axp22x-soft-battery,full-current-microamp = <100000>;
+			axp22x-soft-battery,silent-samples = <6>;
+			axp22x-soft-battery,guard-samples = <12>;
+			/* The writes of axp20x_battery of Rex (patch 0001):
+			 * <reg mask value>, by regmap_update_bits() (D105).
+			 */
+			axp22x-soft-battery,reg-writes =
+				<0x30 0x03 0x03>,	/* VBUS: no current limit */
+				<0x32 0x08 0x08>,	/* CHGLED by the charger */
+				<0x34 0x30 0x20>,	/* the output on after the charge; CHGLED type A */
+				<0x36 0x0f 0x0b>,	/* the power key: 10 s, off, no start again */
+				<0x90 0x07 0x00>;	/* GPIO0: output low */
+		};
+	};
+};
