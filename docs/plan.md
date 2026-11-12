@@ -48,7 +48,7 @@ showcase, `shots/1-threads.scheme`.
   counts (the time between samples by `ktime`, so a late work counts
   right), steps the learning, adds a point, steps the level.
 - One mutex for the whole state: the count, the level, the points, the
-  histogram of R, the model in use, the draft, the run. Under it only the
+  sums of R at the start, the model in use, the draft, the run. Under it only the
   sums, microseconds.
 - Out of the mutex: the read of I2C (ms on `i2c-gpio`),
   `power_supply_changed()`, `kobject_uevent_env()`.
@@ -112,13 +112,13 @@ one list per file, as sysfs asks:
 | `model_table_uv`, `model_table_ua` | rw | the table: the voltages, the currents, one list each, the same length |
 | `model_source` | ro | `default` or `loaded` |
 | `model_commit` | wo | `1`: the values written to `model_*` are checked and taken together; a bad one: `-EINVAL` and a line in dmesg; the model in use stays |
-| `run_q_full`, `run_e_full`, `run_r`, `run_v_end`, `run_i_end`, `run_table_uv`, `run_table_ua`, `run_r_steps`, `run_r_full` | ro | the run learned, as it is (D29); there after `done` |
+| `run_q_full`, `run_e_full`, `run_r`, `run_v_end`, `run_i_end`, `run_table_uv`, `run_table_ua` | ro | the run learned, as it is (D29); there after `done` |
 | `learn_state` | ro | `idle`, `full`, `learning`, `done` |
 | `learn_charge`, `learn_energy`, `learn_seconds` | ro | the count of the learning that runs |
 | `axp_state` | ro | `ok`, `silent` |
 
-`run_r_full` is R at the step from rest when the charger goes out (the
-start of the discharge logs); it is not used by the model.
+`run_r` is R of the step at the start of the run (D34); 0 when the step
+was under 300 mA.
 
 The uevent at the silence: `UCONSOLE_SOFT_BATTERY_EVENT=axp_silent`,
 `UCONSOLE_SOFT_BATTERY_RUN=1` with a run, `0` with none (D19). The
@@ -154,7 +154,7 @@ Proposed. One allocation at the probe; no allocation in the work.
 | the sums of the point that is filled now: V, I, count | 24 B |
 | the count: charge and energy (s64 each), time of the start, last sample | 32 B |
 | the end: `V_end`, `I_end`, time | 12 B |
-| the resistance `R`: the sum of dV/dI at steps of the current, the count | 16 B |
+| R at the start (D34): the voltage at rest, the sums of V and I of the first 60 s, the count | 24 B |
 | the model in use and the one written, not yet committed: 21 points of V and I each, `Q_full`, `E_full`, `R`, `V_end`, `I_end` | about 2 × 200 B |
 
 About 2.6 KiB in all. The step is `charge_full_design` / 256 (35 mAh
@@ -163,8 +163,10 @@ goes on and no point is added; dmesg says it once.
 
 The module makes the model at `done` (D20), in integers:
 
-- `R`: dV/dI over pairs of samples 1 s apart where the current moved;
-  the step and the part of the discharge: "Open questions", the values;
+- `R`: made at the 60th second of the run, not at `done` (D34):
+  (the voltage at rest − the mean voltage of the first 60 s) / (the mean
+  current of those 60 s + the current at rest); 0 if that step is under
+  300 mA;
 - the table: 21 points, one each 5 % of the charge out, taken from the
   curve between its points; each point is the mean V and the mean I
   under load, as measured (D22). No OCV: the AXP gives the voltage
@@ -365,25 +367,6 @@ sum is old. The version stays until a first release. A tarball of a tag
     change of the options or of `runs/`.
 - The values of the model and of C'. Worked out in `discussion.md`,
   "The values, from two logs". Proposed:
-  - R: proposed now, a part of the model, learned in each run from the
-    step at its start (`discussion.md`, "R learned at the start of a
-    run"): R = (the voltage at rest, the mean of the last 5 full samples
-    − the mean voltage of the first 60 s under load) / (the mean current
-    of those 60 s + the current at rest); in `run_r`; no R when the step
-    is under 300 mA. The program takes the mean of `RUN_R` with the
-    rest (D29). With no run: `uconsole,resistance-micro-ohms = <87000>` of
-    the device tree. The steps below 50 % and the histogram are not
-    needed then. The lines below were the way by the steps:
-  - R: learned by the module in each run, from the voltage and the
-    current of the ADC; not the RDC of the AXP (`module.axp`). One R per
-    model, the same through a discharge. Only steps below 50 % count,
-    where the voltage weighs (`discussion.md`, "R: a constant, the AXP,
-    or learned");
-  - R: the median of dV/dI over steps of 1 s of 30 mA or more, kept as a
-    histogram of 5 mOhm bins (40 × u16); fewer than 10 steps in a run: no
-    R learned, the R of the model in use stays; the default R is a
-    property of the node of the module, beside the end of D21:
-    `uconsole,resistance-micro-ohms = <87000>`;
   - the table: 21 points stay (D22). 41 points gain little where the
     voltage weighs (below 50 %): `discussion.md`, "21 or 41 points";
   - C': as D23. The weight 50 → 20 % is taken back: played on the logs
