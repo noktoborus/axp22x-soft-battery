@@ -140,9 +140,9 @@ Proposed. One allocation at the probe; no allocation in the work.
 | the count: charge and energy (s64 each), time of the start, last sample | 32 B |
 | the end: `V_end`, `I_end`, time | 12 B |
 | the resistance `R`: the sum of dV/dI at steps of the current, the count | 16 B |
-| the model in use and the one written, not yet committed: 41 points of V and I each, `Q_full`, `E_full`, `R`, `V_end`, `I_end` (41 if taken) | about 2 × 350 B |
+| the model in use and the one written, not yet committed: 21 points of V and I each, `Q_full`, `E_full`, `R`, `V_end`, `I_end` | about 2 × 200 B |
 
-About 2.9 KiB in all. The step is `charge_full_design` / 256 (35 mAh
+About 2.6 KiB in all. The step is `charge_full_design` / 256 (35 mAh
 for 9 Ah), so 512 points hold up to 2 × the design. Past that the count
 goes on and no point is added; dmesg says it once.
 
@@ -358,8 +358,8 @@ sum is old. The version stays until a first release. A tarball of a tag
     R learned, the R of the model in use stays; the default R is a
     property of the node of the module, beside the end of D21:
     `uconsole,resistance-micro-ohms = <87000>`;
-  - the table: 41 points, one each 2.5 %, in place of 21 (D22): 21
-    points miss the curve by up to 1.7 %, 41 by 0.5 %;
+  - the table: 21 points stay (D22). 41 points gain little where the
+    voltage weighs (below 50 %): `discussion.md`, "21 or 41 points";
   - C': the means of V and I over 30 s, as D23; the weight of the voltage
     from 50 % (0) to 20 % (full), in place of 30 % and 10 %; f in 0.5..2,
     as D23.
