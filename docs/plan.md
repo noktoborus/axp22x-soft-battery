@@ -292,12 +292,27 @@ gives about six lines.
 
 ## Open questions
 
-- Q6. The program: the mean of the last 5 valid runs, no limit of age;
-  the check of a run (`Q_full` in 30..200 % of the design, V of the table
-  falls with the charge out; a run that fails goes to `invalid/`, D45); `seq` in the name,
-  the date inside; `reset` moves `runs/` to `runs.<seq>/`; `load` by hand
-  with a mode that writes the attributes; `systemctl poweroff --force`;
-  `std` only.
+- Q6. The program:
+  - the files (D45, D46), proposed:
+    ```
+    /var/lib/uconsole-soft-battery/
+    ├── runs/      the last 5 valid runs: the mean (D29)
+    ├── archive/   the valid runs set aside, by age or by a reset
+    │   └── reset-<seq>   an empty file: a reset was made after run <seq>
+    └── invalid/   the runs that failed the check
+    ```
+    `load` moves from `runs/` to `archive/` all but the last 5 (at boot,
+    not at the silence); `reset` moves all of `runs/` to `archive/` and
+    writes `archive/reset-<seq>`. The highest `V_end` (D35) is of the runs
+    of `runs/` and of `archive/` after the last mark `reset-<seq>`; so a run
+    set aside by age still counts for the end, a run before a reset does
+    not;
+  - the mean of the last 5 valid runs, no limit of age;
+  - the check of a run (`Q_full` in 30..200 % of the design, V of the table
+    falls with the charge out); `seq` in the name, the date inside;
+  - `load` by hand with a mode that writes the attributes;
+  - `systemctl poweroff --force`;
+  - `std` only.
 - Q7. Three properties: `power_now` = V × I (without it upower shows no
   time, "What does patch 0002 do"); `time_to_empty_now` by the mean
   current of 60 s; `capacity_level` `Critical` under 5 %, `Low` under
