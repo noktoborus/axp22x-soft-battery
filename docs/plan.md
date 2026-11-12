@@ -52,20 +52,20 @@ Only in B, proposed (`discussion.md`, "Variant B in full"):
   V × I of its own samples. Not the drivers there are (IIO, `axp20x-ac`):
   that would read the bus twice and lose bit 6 of 0x01 (`discussion.md`,
   "The daemon with the least tie to the module").
-- QB3. Start: a rule of udev on `add` of our battery, `TAG+="systemd"`,
-  `ENV{SYSTEMD_WANTS}="axp22x-soft-battery.service"`; the service
-  `Restart=always`. At its start the daemon writes the mean model
-  (`model_*`, `model_commit`); no `IMPORT{program}`.
+- QB3, decided (D65): a rule of udev on `add` of our battery,
+  `TAG+="systemd"`, `ENV{SYSTEMD_WANTS}="axp22x-soft-battery.service"`; no
+  `Restart=`. At its start the daemon writes the mean model (`model_*`,
+  `model_commit`); no `IMPORT{program}`.
 - QB4. The learning in the daemon: the start at `status` from `Full` to
   `Discharging`; R by the step at the start (D34); the curve at full
   resolution in its memory (no bins); the end at `health` = `Dead` or the
   reads failing; then the run kept, the mean made, `systemctl poweroff
   --force` (D49). Kept in memory only, as D16; a restart of the daemon
   drops a learning (a line in its log).
-- QB5. Suspend in the daemon: `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC` grows
-  by the time of a sleep; a growth drops the learning (D33).
-- QB6. The log of the daemon: its stdout and stderr into the journal of
-  systemd (a service); D27 said `/dev/kmsg` for a program of `RUN`.
+- QB5, decided (D66): a growth of `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`
+  drops the learning (D33).
+- QB6, decided (D67): stdout and stderr into the journal; the lines of
+  the module stay in dmesg.
 
 ## The design
 
@@ -419,7 +419,7 @@ not the curve.
 
 ## Open questions
 
-- QB1, QB3-QB6: variant B, in "Two variants".
+- QB1, QB4: variant B, in "Two variants".
 
 ## Fixed on the review
 
