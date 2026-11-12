@@ -56,7 +56,7 @@ Proposed. One allocation at the probe; no allocation in the work.
 | the count: charge and energy (s64 each), time of the start, last sample | 32 B |
 | the end: `V_end`, `I_end`, time | 12 B |
 | the resistance `R`: the sum of dV/dI at steps of the current, the count | 16 B |
-| the model in use: 21 points of OCV, `Q_full`, `E_full`, `R`, `V_end` | about 100 B |
+| the model in use: 21 points of V and I under load, `Q_full`, `E_full`, `R`, `V_end`, `I_end` | about 200 B |
 
 About 2.2 KiB in all. The step is `charge_full_design` / 256 (35 mAh
 for 9 Ah), so 512 points hold up to 2 × the design. Past that the count
@@ -66,11 +66,13 @@ The module makes the model at `done` (D20), in integers:
 
 - `R`: the mean of dV/dI over pairs of samples 1 s apart where the
   current moved by 200 mA or more (proposed values);
-- the table of OCV: 21 points, one each 5 % of the charge out, taken
-  from the curve between its points, OCV = V + I × R;
+- the table: 21 points, one each 5 % of the charge out, taken from the
+  curve between its points; each point is the mean V and the mean I
+  under load, as measured (proposed). No OCV: the AXP gives the voltage
+  under load only (`discussion.md`, "How to get OCV");
 - `Q_full`, `E_full`, `V_end`, `I_end` from the count.
 
-The model is about 300 B as text: it goes into the uevent whole (the
+The model is about 500 B as text: it goes into the uevent whole (the
 environment of a uevent is at most 2048 B, `UEVENT_BUFFER_SIZE`). The
 curve stays in the module; user space does not read it.
 
@@ -92,7 +94,7 @@ an event, never in a loop. `dev_*` of the device `uconsole-battery`.
 | warn | the points are full | `learning: 512 points full at 18000 mAh, curve stops, count goes on` |
 | warn | the AXP silent | `AXP silent: 6 reads failed, last -6` |
 | notice | the learning done | `learning done: 9067 mAh, 33.3 Wh in 5 h 40 min, end 3100 mV at 1907 mA` |
-| info | the model made | `model made: R 95 mOhm, OCV 4133..3287 mV, uevent sent` |
+| info | the model made | `model made: R 73 mOhm, 4028..3147 mV at 1436..1907 mA, uevent sent` |
 | warn | the AXP silent, no learning | `AXP silent, no learning in progress, uevent sent` |
 | warn | a read of the ADC failed (not the silence) | `ADC read failed: -5`, rate limited |
 | warn | the module removed during the learning | `removed: learning lost, 1234 mAh counted` |
@@ -109,22 +111,25 @@ its values; they are not in dmesg.
   2026-11-08, `hardware/notes/discharge-cm5.md`).
 - With no model: `charge_full_design` of the device tree and the curve of
   `hardware/notes/discharge-cm5.md`.
-- The kernel has `power_supply_batinfo_ocv2cap()` for a table of OCV
-  against percent, the form of `ocv-capacity-table-0` of
-  `simple-battery`.
+- `power_supply_batinfo_ocv2cap()` of the kernel takes a table of OCV;
+  the table under load does not fit it. The module looks up its own
+  table.
 
 ### The level of the charge
 
 - The base is the count: `charge_now / Q_full`. The marker of the full
   charge sets 100 %.
-- At a boot in the middle of a discharge the start is by the voltage:
-  OCV ≈ V + I × R, the mean over 30-60 s, then the table. Nothing of the
+- At a boot in the middle of a discharge the start is by the voltage
+  (proposed): the means V and I over 30-60 s; the point q of the table
+  where V_t(q) − (I − I_t(q)) × R = V. R only moves the curve by the
+  difference of the currents, not by the whole current. Nothing of the
   charge is saved over a boot (D16).
 - The voltage corrects the count slowly, more at a low charge.
-- The error of the voltage, from the table of `discharge-cm5.md`: the OCV
-  moves about 75 mV per 10 % at 60-40 %, about 130 mV per 10 % at
-  20-0 %. An error of 20 mΩ in R at 1.6 A is about 32 mV: about 4 % in the
-  middle, 2.5 % near the end.
+- The error of the voltage, from the table of `discharge-cm5.md`: the
+  voltage moves about 75 mV per 10 % at 60-40 %, about 130 mV per 10 %
+  at 20-0 %. An error of 20 mΩ in R at a difference of 0.5 A from the
+  learned current is 10 mV: about 1.5 % in the middle, under 1 % near the
+  end.
 
 ### User space
 
@@ -194,7 +199,8 @@ its values; they are not in dmesg.
 ## Open questions
 
 - 0 %: (A) the end of the learned run (proposed), or (B) the point
-  where OCV − I × R reaches `V_end` at the mean current of now, or (C) A
+  where V_t(q) − (I − I_t(q)) × R reaches `V_end` at the mean current
+  of now, or (C) A
   with B blended in near the end. Worked out in `discussion.md`, "What
   0 % is".
   - A: monotone and simple; off by about 3-5 % at the end when the load
