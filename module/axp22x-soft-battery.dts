@@ -81,7 +81,7 @@
 			/* The cells: a simple-battery of the kernel. */
 			axp22x_soft_battery_cells: axp22x-soft-battery-cells {
 				compatible = "simple-battery";
-				/* The design of the cells: 2 x 3350 mAh x 3.7 V. */
+				/* The chemistry of the cells. */
 				device-chemistry = "lithium-ion";
 				/* The current of the charge, in uA. 300000 to 2550000;
 				 * between two steps of 150000 it is rounded down.
