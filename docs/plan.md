@@ -120,7 +120,7 @@ scheme: desk `uconsole-soft-battery-work` of showcase,
   memory of the module only (D16); a reboot, a cut by `V_OFF`, a suspend
   drop it (D17, D33).
 - It counts the charge (net, in − out) and the energy; it keeps the
-  curve: the mean V and I at each step of charge out.
+  curve in bins that merge when full (D44).
 - R (D34): at the 60th second after the charger goes out: (the voltage
   at rest − the mean voltage of the first 60 s) / (the mean current of
   those 60 s + the current at rest); 0 if that step is under 300 mA.
@@ -133,25 +133,29 @@ scheme: desk `uconsole-soft-battery-work` of showcase,
 
 ### The memory of the learning
 
-Proposed (Q5). One allocation at the probe; none in the work.
+D44 (`discussion.md`, "Q5: the memory"). One allocation at the probe; none
+in the work.
 
 | what | size |
 |---|---|
-| the points of the curve: the mean V (u16, mV) and I (u16, mA) each 50 mAh of charge out | 4 B × 512 = 2 KiB |
-| the sums of the point that is filled now | 24 B |
-| the count: charge, energy, time | 32 B |
-| R at the start: the voltage at rest, the sums of 60 s | 24 B |
-| the end: `V_end`, `I_end` (means of 30 s) | 12 B |
-| the model in use, and the one written but not committed | 2 × about 200 B |
+| the curve: 80 bins, the mean V (u16, mV) and I (u16, mA) each | 320 B |
+| the models, in use, the draft, the run: 21 points of u16 mV and u16 mA, 5 values | 3 × about 104 B |
+| the count, the sums of the bin that is filled now, R at the start, the end | about 90 B |
 
-About 2.6 KiB. The step is a fixed 50 mAh: 512 points hold 25.6 Ah. Past
-that the count goes on and no point is added; dmesg says it once.
+About 0.75 KiB. The first step is 25 mAh; when the 80 bins are full, each
+two next bins become one (the means of the two) and the step doubles; the
+count goes on. At the end of any run 40-80 bins are used, each 1.25-2.5 %
+of the charge; the 21 points of the table are put on them by a line
+between the middles of the bins. No bound of the capacity, no need to
+know it before. The interface gives µV and µA; the module keeps mV and
+mA.
 
 ### The model and the level
 
 - The model (D22, D34, D35): `Q_full`, `E_full`, `R`, `V_end` (here the
   threshold `V_thr`), `I_end`, the table of 21 points under load.
-- With no model: `Q_full` = `charge_full_design` of `battery@0`; the
+- With no model: `Q_full` = `charge_full_design` of `battery@0`, not
+  guessed (D44); the
   table of the run of 24.10 (`hardware/notes/discharge-cm5.md`); the end
   3.2 V (D21), `end_uv`; R 87 mOhm, `r_uohm` (D34). Both parameters of
   the module (D36).
@@ -288,7 +292,6 @@ gives about six lines.
 
 ## Open questions
 
-- Q5. The memory: the points each 50 mAh (fixed), 512 of them.
 - Q6. The program: the mean of the last 5 valid runs, no limit of age;
   the check of a run (`Q_full` in 30..200 % of the design, V of the table
   falls with the charge out) and `<seq>.invalid.env`; `seq` in the name,
