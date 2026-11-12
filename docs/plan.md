@@ -205,6 +205,11 @@ sum is old. The version stays until a first release. A tarball of a tag
 - The module: `sys-power/uconsole-soft-battery` (D26) in repo-uconsole;
   `linux-mod-r1`, depends on `virtual/dist-kernel`; the overlay
   `uconsole-soft-battery.dtbo` by `dtc -@` into `/boot/overlays`.
+- `config.txt` is not changed by any package (D32). `pkg_postinst` of
+  the package of the module says by `elog` the line to add by hand, in
+  `[pi5]`, after `dtoverlay=clockworkpi-uconsole-cm5`:
+  `dtoverlay=uconsole-soft-battery`; and to delete it before the package
+  is removed.
 - The overlay: `target-path` to the node `battery-power-supply`,
   `status = "disabled"`; a node `compatible = "uconsole,soft-battery"` at the
   root, so that udev loads the module by its alias.
@@ -244,14 +249,6 @@ sum is old. The version stays until a first release. A tarball of a tag
 
 - The values of C' (D23): 30 s, f in 0.5..2, 30 %, 10 %; to check by
   the level at the silence, in dmesg.
-- The line of `config.txt`. Proposed now, simpler: one line in `[pi5]` of
-  `config.txt` of `uconsole-pi-firmware`, after
-  `dtoverlay=clockworkpi-uconsole-cm5`:
-  `dtoverlay=uconsole-soft-battery`. The switch is the file
-  `/boot/overlays/uconsole-soft-battery.dtbo`, which the package of the
-  module installs and takes away. To check once on the device: with no
-  such `.dtbo` the firmware skips the line and boots (`vclog -m` tells).
-  No `include` (`discussion.md`, "One line").
 - The mean model (D29, D30). Worked out in `discussion.md`, "The mean
   model". Proposed:
   - all runs kept, `runs/<seq>.env`; `seq` a number the program counts up;

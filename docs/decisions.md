@@ -36,3 +36,4 @@ not answered yet is in `plan.md`, "Open questions".
 | D29 | 2026-11-12 | user | The program keeps the models it gets from the module, one per run, and the mean model it makes of them. The mean model is the one loaded at boot (D13). The module gives each run as it learned it, with no mix. When the mean is made: D30. |
 | D30 | 2026-11-12 | user | The mean model is made when the model is loaded at boot, not when a run is saved. The set of runs may change between boots: runs may be deleted. (The mark of an unchanged source is dropped by D31.) |
 | D31 | 2026-11-12 | user | No cache of the mean: at each load the program reads all runs there are and makes the mean again. No `model.env`. |
+| D32 | 2026-11-12 | user | No package adds anything to `config.txt`. The package of the module tells by `elog` the line to add by hand: `dtoverlay=uconsole-soft-battery` in `[pi5]`, after `dtoverlay=clockworkpi-uconsole-cm5`. |
