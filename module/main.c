@@ -129,7 +129,7 @@ static int sb_probe(struct platform_device *pdev)
 		return ret;
 
 	platform_set_drvdata(pdev, sb);
-	sb_sample_now(sb);
+	sb_start_work(sb);
 	return 0;
 }
 
@@ -149,7 +149,7 @@ static int sb_resume(struct device *dev)
 	sb_mean_reset(sb);
 	sb_r_forget_step(sb);
 	dev_info(dev, "resume\n");
-	sb_sample_now(sb);
+	sb_start_work(sb);
 	return 0;
 }
 

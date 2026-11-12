@@ -21,6 +21,7 @@ static const enum power_supply_property sb_props[] = {
 	POWER_SUPPLY_PROP_TECHNOLOGY,
 	POWER_SUPPLY_PROP_CAPACITY,
 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
+	POWER_SUPPLY_PROP_VOLTAGE_OCV,
 	POWER_SUPPLY_PROP_CURRENT_NOW,
 	POWER_SUPPLY_PROP_POWER_NOW,
 	POWER_SUPPLY_PROP_ENERGY_NOW,
@@ -96,6 +97,9 @@ static int sb_get_now(struct sb *sb, enum power_supply_property psp,
 	case POWER_SUPPLY_PROP_POWER_NOW:
 		val->intval = div_s64((s64)sb->snap.voltage_uv * sb->snap.current_ua,
 				      1000000);
+		return 0;
+	case POWER_SUPPLY_PROP_VOLTAGE_OCV:
+		val->intval = sb->snap.ocv_uv;
 		return 0;
 	case POWER_SUPPLY_PROP_INTERNAL_RESISTANCE:
 		val->intval = sb->snap.r_uohm;

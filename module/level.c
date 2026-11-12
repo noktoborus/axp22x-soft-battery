@@ -41,7 +41,7 @@ static bool sb_on_cv_curve(struct sb *sb, bool supplied, int v_uv, int i_ua)
 }
 
 /* OCV = V - I * R, with I positive on a charge, R as learned (r.c). */
-static int sb_ocv(struct sb *sb, int v_uv, int i_ua)
+int sb_ocv(struct sb *sb, int v_uv, int i_ua)
 {
 	return v_uv - (int)div_s64((s64)i_ua * sb->r_uohm, 1000000);
 }

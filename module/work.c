@@ -29,6 +29,13 @@
 #define SB_FAST_SAMPLES		5
 #define SB_FAST_MS		1000
 
+/*
+ * After the probe or a resume, the first 30 samples come each 5 s, as
+ * adc-battery-helper.c does: the means and R fill sooner.
+ */
+#define SB_START_SAMPLES	30
+#define SB_START_MS		5000
+
 /* One sample of the ADC, in mV and mA. */
 struct sb_sample {
 	int v_mv;
@@ -41,15 +48,22 @@ struct sb_means {
 	int i_ua;
 };
 
-/* The next run: soon after a change of the charger, else at the period. */
+/*
+ * The next run: soon after a change of the charger, sooner at the start,
+ * else at the period.
+ */
 static void sb_schedule(struct sb *sb)
 {
 	unsigned long delay;
 
-	if (atomic_dec_if_positive(&sb->fast_left) >= 0)
+	if (atomic_dec_if_positive(&sb->fast_left) >= 0) {
 		delay = msecs_to_jiffies(SB_FAST_MS);
-	else
+	} else if (sb->start_left > 0) {
+		sb->start_left--;
+		delay = msecs_to_jiffies(SB_START_MS);
+	} else {
 		delay = round_jiffies_relative(msecs_to_jiffies(sb->interval_ms));
+	}
 	queue_delayed_work(system_power_efficient_wq, &sb->work, delay);
 }
 
@@ -61,6 +75,13 @@ void sb_sample_now(struct sb *sb)
 {
 	atomic_set(&sb->fast_left, SB_FAST_SAMPLES);
 	mod_delayed_work(system_power_efficient_wq, &sb->work, 0);
+}
+
+/* The first run, at the probe or a resume, while no run is queued. */
+void sb_start_work(struct sb *sb)
+{
+	sb->start_left = SB_START_SAMPLES;
+	sb_sample_now(sb);
 }
 
 /* The means and the level start again from the voltage. */
@@ -186,7 +207,7 @@ static int sb_hold_level(struct sb *sb, bool supplied, int level)
 
 /* The copy for get_property; true when upower must hear of it. */
 static bool sb_store(struct sb *sb, int status, int level,
-		     const struct sb_sample *s)
+		     const struct sb_sample *s, int ocv_uv)
 {
 	bool changed;
 
@@ -200,6 +221,7 @@ static bool sb_store(struct sb *sb, int status, int level,
 	sb->snap.voltage_uv = s->v_mv * 1000;
 	sb->snap.current_ua = (s->chrg_ma - s->dischrg_ma) * 1000;
 	sb->snap.r_uohm = sb->r_uohm;
+	sb->snap.ocv_uv = ocv_uv;
 	return changed;
 }
 
@@ -240,7 +262,8 @@ static void sb_take_sample(struct sb *sb, const struct sb_sample *s)
 	m = sb_add_mean(sb, supplied, s);
 	level = sb_hold_level(sb, supplied,
 			      sb_level(sb, status, supplied, m.v_uv, m.i_ua));
-	changed = sb_store(sb, status, level, s) || supplied != sb->prev_supplied;
+	changed = sb_store(sb, status, level, s, sb_ocv(sb, m.v_uv, m.i_ua)) ||
+		  supplied != sb->prev_supplied;
 
 	sb_tell_events(sb, supplied, status, level, s, &m);
 	sb_remember(sb, supplied, status, level);
