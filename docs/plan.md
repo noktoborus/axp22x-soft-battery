@@ -198,26 +198,34 @@ state (the marker), silently. So a cycle gives about four lines: full,
 started, done or dropped, silent. (`discussion.md`, "dmesg and the full
 state".)
 
+The prefix of each line is that of `dev_*`: the name of the driver and
+of the device, `uconsole_soft_battery axp20x-battery-power-supply:`
+(D36: the device is the cell of the MFD). `dmesg | grep
+uconsole_soft_battery` finds them all.
+
 | level | when | text, about |
 |---|---|---|
-| info | the probe | `loaded: AXP228 at 3-0034; charge current 2100 mA, V_OFF 2900 mV` |
-| info | the probe | `no model yet, awaiting user space; default: 9067 mAh of the device tree` |
-| info | a model written | `model: 9067 mAh, 33.3 Wh, R 95 mOhm, V_end 3100 mV` |
-| err | a model refused | `model refused: <attribute> = <value>, <why>` |
-| info | the start level | `start level 54 % by voltage: 3711 mV at 1601 mA` |
-| info | the full state begins (from no full state) | `full: 4204 mV at 21 mA; the learning starts when the charger goes out` |
-| info | the full state begins while a learning runs | `full: learning dropped, 1234 mAh counted; ...` (one line) |
+| info | the probe | `bound: charge current 2100 mA, V_OFF 2900 mV, full at 4200 mV` |
+| info | the probe | `no model yet: 9067 mAh of battery@0, end 3200 mV, R 87 mOhm; awaiting user space` |
+| info | `model_commit` | `model: 8542 mAh, 31.2 Wh, R 78 mOhm, end 3211 mV, 21 points` |
+| err | `model_commit` refused | `model refused: model_table_uv has 20 values, model_table_ua 21` |
+| info | the start level (probe with a model, a new model, resume) | `start level 54 % by voltage: 3711 mV at 1601 mA` |
+| info | the full state begins | `full: 4204 mV at 21 mA; the learning starts when the charger goes out` |
+| info | the full state begins while a learning runs | `full: learning dropped, 1234 mAh counted` |
 | info | the charger goes out from the full state | `learning started: 4204 mV at rest, 4104 mV at 1395 mA` |
+| info | the 60th second of a learning (D34) | `learning: R 77 mOhm by a step of 1853 mA`, or `learning: no R, a step of 210 mA` |
 | debug | the full state ends by a new charge, the charger in | `full state left: charging again` |
-| warn | the points are full | `learning: 512 points full at 18000 mAh, curve stops, count goes on` |
-| warn | the AXP silent | `AXP silent: 6 reads failed, last -6` |
-| notice | the learning done | `learning done: 9067 mAh, 33.3 Wh in 5 h 40 min, end 3100 mV at 1907 mA` |
-| info | the model made | `model made: R 73 mOhm, 4028..3147 mV at 1436..1907 mA, uevent sent` |
-| warn | the AXP silent, no learning | `AXP silent, no learning in progress, uevent sent` |
-| warn | a read of the ADC failed (not the silence) | `ADC read failed: -5`, rate limited |
-| warn | the module removed during the learning | `removed: learning lost, 1234 mAh counted` |
-| info | suspend during the learning | `suspend: learning dropped, 1234 mAh counted` |
-| info | resume | `resume: start level 54 % by voltage: 3711 mV at 1601 mA` |
+| warn | the points are full | `learning: 512 points full at 18000 mAh; the curve stops, the count goes on` |
+| info | the level reaches 0 % by the voltage (D35) | `level 0 %: 3211 mV at 2450 mA, mean of 30 s` |
+| warn | the AXP silent | `AXP silent: 3 reads failed, last -6` |
+| notice | the learning done | `learning done: 8204 mAh, 30.1 Wh in 4 h 14 min, end 3161 mV at 2452 mA, R 77 mOhm; level shown 0 %` |
+| warn | the AXP silent, no learning | `AXP silent, no learning; level shown 3 %; uevent sent` |
+| info | suspend during a learning (D33) | `suspend: learning dropped, 1234 mAh counted` |
+| warn | a read failed, not the silence | `ADC read failed: -5` (`dev_warn_ratelimited`) |
+| warn | the module removed during a learning | `removed: learning lost, 1234 mAh counted` |
+
+The level shown at the silence is in both lines of the silence: it
+measures the error of the end (D35) on each run.
 
 The power supply itself makes the uevents of `add` and of a change of
 its values; they are not in dmesg.
