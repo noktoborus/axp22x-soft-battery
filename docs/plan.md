@@ -170,7 +170,7 @@ that the count goes on and no point is added; dmesg says it once.
 
 ### The interface
 
-Proposed (Q4; `discussion.md`, "Q4: the interface, in full"). Units of the
+D43 (`discussion.md`, "Q4: the interface, in full"). Units of the
 power supply class: µV, µA, µAh, µWh, µΩ.
 
 The properties of the class (read by upower and by anyone):
@@ -231,7 +231,7 @@ gives about six lines.
 
 - The program `uconsole-soft-battery`, in Rust (D25), package
   `sys-power/uconsole-soft-battery-tools` (D26).
-- At the silence: a rule of udev on `POWER_SUPPLY_HEALTH=Dead` (Q4) runs
+- At the silence: a rule of udev on `POWER_SUPPLY_HEALTH=Dead` (D43) runs
   `uconsole-soft-battery save` right in `RUN` (D27); no service. The sandbox of udevd allows its work
   (`discussion.md`, "The sandbox of udevd").
   - With no run: a forced power off (D19).
@@ -288,11 +288,6 @@ gives about six lines.
 
 ## Open questions
 
-- Q4. The interface ("The interface"): the properties with `health` and
-  `internal_resistance` of the class; the attributes, fewer (no
-  `axp_state`, `learn_energy`, `learn_seconds`); the draft and its checks;
-  the silence told by `health` = `Dead` in the uevent of the class, no
-  uevent of our own; the parameters.
 - Q5. The memory: the points each 50 mAh (fixed), 512 of them.
 - Q6. The program: the mean of the last 5 valid runs, no limit of age;
   the check of a run (`Q_full` in 30..200 % of the design, V of the table
@@ -310,7 +305,8 @@ gives about six lines.
 What did not agree, 2026-11-12, and how it stands now:
 
 - The event key: `UCONSOLE_BATTERY_EVENT` (a name before D26) in one place,
-  `UCONSOLE_SOFT_BATTERY_EVENT` in another: the second.
+  `UCONSOLE_SOFT_BATTERY_EVENT` in another; since D43 neither: the key of
+  the class, `POWER_SUPPLY_HEALTH=Dead`.
 - The uevent was said to carry the whole model (about 500 B) in two
   places; "The interface" has the program read it from sysfs: the uevent
   carries no model.
