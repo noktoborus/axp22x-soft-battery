@@ -118,7 +118,8 @@ Not decided where it says "proposed".
 ## Open questions
 
 - How the model reaches the module at boot: options of modprobe
-  (proposed), `request_firmware()`, a write into sysfs.
+  (proposed; only for `=m`, which a package of its own always is),
+  `request_firmware()`, a write into sysfs (works for `=y` too).
 - Is the learning started by hand (`learn=1`), or does it run on each
   cycle?
 - 0 %: the end of the learned run (proposed), or the point where
