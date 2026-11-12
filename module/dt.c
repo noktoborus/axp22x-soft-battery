@@ -58,7 +58,7 @@ int sb_find_node(struct sb *sb)
 	sb->np = of_find_compatible_node(NULL, NULL, SB_COMPATIBLE);
 	if (!sb->np)
 		return dev_err_probe(sb->dev, -EINVAL,
-				     "no node \"" SB_COMPATIBLE "\": dtoverlay=axp22x-soft-battery missing?\n");
+				     "no node \"" SB_COMPATIBLE "\"\n");
 
 	other = of_find_compatible_node(of_node_get(sb->np), NULL, SB_COMPATIBLE);
 	if (!other)
