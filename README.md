@@ -31,3 +31,4 @@ State: the design is in work; no code yet.
 | `tools/log-r-noise-slope.py` | from a log of `hardware/tools/axp-log`: R by steps of the current, the noise of the voltage by the window of the mean, the slope of the curve, the end |
 | `tools/log-r-table.py` | from such a log: R by the size of the step, the error of a table of 11, 21, 41 points |
 | `tools/log-table-zones.py` | from such logs: the error of a table of 21 and 41 points by the part of the discharge |
+| `tools/sim-level.py` | plays the level C' over a log with a model made of another log: the level at the silence and the largest gap, by the weights of the voltage; what the voltage alone says against the count |

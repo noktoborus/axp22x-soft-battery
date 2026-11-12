@@ -360,6 +360,12 @@ sum is old. The version stays until a first release. A tarball of a tag
     `uconsole,resistance-micro-ohms = <87000>`;
   - the table: 21 points stay (D22). 41 points gain little where the
     voltage weighs (below 50 %): `discussion.md`, "21 or 41 points";
-  - C': the means of V and I over 30 s, as D23; the weight of the voltage
-    from 50 % (0) to 20 % (full), in place of 30 % and 10 %; f in 0.5..2,
-    as D23.
+  - C': as D23. The weight 50 → 20 % is taken back: played on the logs
+    it changes the level at the silence by 0.5 % at most
+    (`discussion.md`, "The weight of the voltage, played on the logs").
+- The end follows the load. The AXP goes silent earlier on the curve at
+  a heavier load at the end: 7.7 % left at 2.87 A, 5.9 % at 2.45 A, 0 at
+  1.94 A, by the curve of 24.10. With a model of one load the level at the
+  silence is off by up to 8 %; the count and the voltage agree, so C'
+  does not fix it. Open: an end by the load (the pairs `V_end`, `I_end`
+  of the runs), or a margin, or the mean of runs only.
