@@ -289,6 +289,15 @@ user.
 - With the defaults of upower (the critical action at 2 %), a run is broken
   off before the silence (D97): whole runs then come only if the user sets
   upower so, or by `import`.
+- Q16. The use of a run broken off low (`discussion.md`, "A run broken
+  off"), proposed: a run stopped by SIGTERM when the level by the curve is
+  10 % or less is kept in `runs/` with `PARTIAL=1`: R and the curve as far as
+  it went are its own; `Q_full`, `E_full` = the charge and the energy out /
+  (1 − the level at the stop); the points of the table under the stop from
+  the curve in use; no `V_end`. `gen-dts` takes it into the means, but
+  `end-microvolt` only of the whole runs (to the silence); with none, it
+  writes no `end-microvolt` (3.2 V of D21 holds). A run stopped higher is
+  printed (D98), not kept.
 
 ## Variant A, kept apart
 
