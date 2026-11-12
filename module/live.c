@@ -48,13 +48,23 @@ static int sb_live_read_adc(struct sb *sb)
 	return 0;
 }
 
+/* No values before the first sample nor during the silence of the AXP. */
+static bool sb_has_data(struct sb *sb)
+{
+	guard(mutex)(&sb->lock);
+	return sb->snap.valid && !sb->snap.silent;
+}
+
 /*
  * The voltage and the current of now: the last read if it is younger than
- * a second, else a read of the ADC. A failed read gives -ENODATA, so the
- * uevent leaves the value out and does not fail.
+ * a second, else a read of the ADC. With no data, or a failed read,
+ * -ENODATA: the uevent leaves the value out and does not fail.
  */
 int sb_live_get(struct sb *sb, int *v_uv, int *i_ua)
 {
+	if (!sb_has_data(sb))
+		return -ENODATA;
+
 	guard(mutex)(&sb->live_lock);
 	if (!sb_live_fresh(sb) && sb_live_read_adc(sb))
 		return -ENODATA;

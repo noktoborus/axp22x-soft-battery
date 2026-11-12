@@ -24,17 +24,11 @@
 
 /*
  * After the charger comes or goes, the current and bit 6 of 0x01 take a
- * moment to settle: five samples at 1 s follow the first one.
+ * moment to settle; at the start the means are empty: five samples at
+ * 1 s follow the first one.
  */
 #define SB_FAST_SAMPLES		5
 #define SB_FAST_MS		1000
-
-/*
- * After the probe or a resume, the first 30 samples come each 5 s, as
- * adc-battery-helper.c does: the means and R fill sooner.
- */
-#define SB_START_SAMPLES	30
-#define SB_START_MS		5000
 
 /* One sample of the ADC, in mV and mA. */
 struct sb_sample {
@@ -48,40 +42,26 @@ struct sb_means {
 	int i_ua;
 };
 
-/*
- * The next run: soon after a change of the charger, sooner at the start,
- * else at the period.
- */
+/* The next run: soon after a change of the charger or the start, else at the period. */
 static void sb_schedule(struct sb *sb)
 {
 	unsigned long delay;
 
-	if (atomic_dec_if_positive(&sb->fast_left) >= 0) {
+	if (atomic_dec_if_positive(&sb->fast_left) >= 0)
 		delay = msecs_to_jiffies(SB_FAST_MS);
-	} else if (sb->start_left > 0) {
-		sb->start_left--;
-		delay = msecs_to_jiffies(SB_START_MS);
-	} else {
+	else
 		delay = round_jiffies_relative(msecs_to_jiffies(sb->interval_ms));
-	}
 	queue_delayed_work(system_power_efficient_wq, &sb->work, delay);
 }
 
 /*
  * A run now, not at the end of the period, and a few more soon after it:
- * the charger came or went, or the work starts.
+ * the charger came or went, or the work starts at the probe or a resume.
  */
 void sb_sample_now(struct sb *sb)
 {
 	atomic_set(&sb->fast_left, SB_FAST_SAMPLES);
 	mod_delayed_work(system_power_efficient_wq, &sb->work, 0);
-}
-
-/* The first run, at the probe or a resume, while no run is queued. */
-void sb_start_work(struct sb *sb)
-{
-	sb->start_left = SB_START_SAMPLES;
-	sb_sample_now(sb);
 }
 
 /* The means and the level start again from the voltage. */

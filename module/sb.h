@@ -104,9 +104,6 @@ struct sb {
 	/* The samples left at a short period after the charger came or went. */
 	atomic_t fast_left;
 
-	/* The samples left at the period of the start, after the probe or a resume. */
-	int start_left;
-
 	/* The lock of snap. */
 	struct mutex lock;
 	struct sb_snapshot snap;
@@ -140,7 +137,6 @@ void sb_r_add(struct sb *sb, bool supplied, int v_uv, int i_ua);
 void sb_work(struct work_struct *work);
 void sb_mean_reset(struct sb *sb);
 void sb_sample_now(struct sb *sb);
-void sb_start_work(struct sb *sb);
 
 /* live.c */
 void sb_live_store(struct sb *sb, int v_uv, int i_ua);

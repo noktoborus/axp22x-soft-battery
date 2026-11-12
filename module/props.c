@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * The power supply "axp22x-soft-battery" and its properties. The values
- * of design come from the device tree; the values of now are a copy of
- * the last sample. No temp, no charge_*, no health: upower works out the
+ * of design come from the device tree; the voltage, the current and the
+ * power of now are read at the request (live.c); the others are a copy of
+ * the last sample of the timer. No temp, no charge_*, no health: upower works out the
  * times and the health from the energy.
  */
 
@@ -102,7 +103,7 @@ static int sb_get_now(struct sb *sb, enum power_supply_property psp,
 	}
 }
 
-/* The values of now at the request; none during the silence of the AXP. */
+/* The values of now, read at the request (live.c). */
 static bool sb_is_live(enum power_supply_property psp)
 {
 	return psp == POWER_SUPPLY_PROP_VOLTAGE_NOW ||
@@ -110,19 +111,11 @@ static bool sb_is_live(enum power_supply_property psp)
 	       psp == POWER_SUPPLY_PROP_POWER_NOW;
 }
 
-static bool sb_has_data(struct sb *sb)
-{
-	guard(mutex)(&sb->lock);
-	return sb->snap.valid && !sb->snap.silent;
-}
-
 static int sb_get_live(struct sb *sb, enum power_supply_property psp,
 		       union power_supply_propval *val)
 {
 	int v_uv, i_ua, ret;
 
-	if (!sb_has_data(sb))
-		return -ENODATA;
 	ret = sb_live_get(sb, &v_uv, &i_ua);
 	if (ret)
 		return ret;

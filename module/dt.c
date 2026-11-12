@@ -12,6 +12,7 @@
 #include <linux/of.h>
 #include <linux/power_supply.h>
 #include <linux/slab.h>
+#include <linux/stddef.h>
 
 #include "sb.h"
 
@@ -258,34 +259,49 @@ static int sb_read_reg_writes(struct sb *sb)
 	return 0;
 }
 
+/* A setting of the node: its field, and the values it may take. */
+struct sb_setting {
+	const char *name;
+	size_t offset;
+	u32 min;
+	u32 max;
+};
+
+#define SB_SETTING(prop, field, lo, hi) \
+	{ SB_PROP(prop), offsetof(struct sb, field), lo, hi }
+
+static const struct sb_setting sb_settings[] = {
+	SB_SETTING("energy-full-microwatt-hours", energy_full_uwh, 1, INT_MAX),
+	SB_SETTING("end-microvolt", end_uv, 0, SB_END_MAX_UV),
+	SB_SETTING("sample-interval-ms", interval_ms, 1000, 600000),
+	SB_SETTING("full-margin-microvolt", full_margin_uv, 1, 500000),
+	SB_SETTING("full-current-microamp", full_current_ua, 1, 1000000),
+	SB_SETTING("silent-samples", silent_samples, 1, 1000),
+	SB_SETTING("guard-samples", guard_samples, 2, 1000),
+};
+
 static int sb_read_settings(struct sb *sb)
 {
-	return sb_read_u32(sb, SB_PROP("energy-full-microwatt-hours"), &sb->energy_full_uwh) ?:
-	       sb_read_u32(sb, SB_PROP("end-microvolt"), &sb->end_uv) ?:
-	       sb_read_u32(sb, SB_PROP("sample-interval-ms"), &sb->interval_ms) ?:
-	       sb_read_u32(sb, SB_PROP("full-margin-microvolt"), &sb->full_margin_uv) ?:
-	       sb_read_u32(sb, SB_PROP("full-current-microamp"), &sb->full_current_ua) ?:
-	       sb_read_u32(sb, SB_PROP("silent-samples"), &sb->silent_samples) ?:
-	       sb_read_u32(sb, SB_PROP("guard-samples"), &sb->guard_samples);
+	const struct sb_setting *s;
+	u32 *val;
+	int ret;
+
+	for (s = sb_settings; s < sb_settings + ARRAY_SIZE(sb_settings); s++) {
+		val = (u32 *)((char *)sb + s->offset);
+		ret = sb_read_u32(sb, s->name, val) ?:
+		      sb_check_range(sb, s->name, *val, s->min, s->max);
+		if (ret)
+			return ret;
+	}
+	return 0;
 }
 
 /* The end may not be under V_OFF; the guard comes after the silence. */
-static int sb_check_settings(struct sb *sb)
+static int sb_check_relations(struct sb *sb)
 {
-	struct power_supply_battery_info *info = sb->psy->battery_info;
-
-	return sb_check_range(sb, SB_PROP("energy-full-microwatt-hours"),
-			      sb->energy_full_uwh, 1, INT_MAX) ?:
-	       sb_check_range(sb, SB_PROP("end-microvolt"), sb->end_uv,
-			      info->voltage_min_design_uv, SB_END_MAX_UV) ?:
-	       sb_check_range(sb, SB_PROP("sample-interval-ms"),
-			      sb->interval_ms, 1000, 600000) ?:
-	       sb_check_range(sb, SB_PROP("full-margin-microvolt"),
-			      sb->full_margin_uv, 1, 500000) ?:
-	       sb_check_range(sb, SB_PROP("full-current-microamp"),
-			      sb->full_current_ua, 1, 1000000) ?:
-	       sb_check_range(sb, SB_PROP("silent-samples"),
-			      sb->silent_samples, 1, 1000) ?:
+	return sb_check_range(sb, SB_PROP("end-microvolt"), sb->end_uv,
+			      sb->psy->battery_info->voltage_min_design_uv,
+			      SB_END_MAX_UV) ?:
 	       sb_check_range(sb, SB_PROP("guard-samples"), sb->guard_samples,
 			      sb->silent_samples + 1, 1000);
 }
@@ -299,7 +315,7 @@ int sb_read_dt(struct sb *sb)
 	int ret;
 
 	ret = sb_check_battery_info(sb) ?: sb_read_settings(sb) ?:
-	      sb_check_settings(sb) ?: sb_read_cv_table(sb) ?:
+	      sb_check_relations(sb) ?: sb_read_cv_table(sb) ?:
 	      sb_read_reg_writes(sb);
 	if (ret)
 		return ret;
