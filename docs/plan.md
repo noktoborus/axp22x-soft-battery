@@ -38,7 +38,7 @@ module), `run_*` of D43.
 
 Only in B, proposed (`discussion.md`, "Variant B in full"):
 
-- QB1. The module in B, proposed in full (`discussion.md`, "QB1: the
+- QB1, decided (D78, with D70-D76). The module in B, in full (`discussion.md`, "QB1: the
   module of B in full"):
   - probe: the IIO channels (`-EPROBE_DEFER`); `battery@0`; the set up of
     the PMIC (D5, the writes of Rex); `ocv-capacity-table-0` or the curve
@@ -478,7 +478,7 @@ not the curve.
 
 ## Open questions
 
-- QB1, QB4: variant B, in "Two variants".
+- QB4: variant B, in "Two variants".
 - Q12, decided (D75). The model in the device tree (D74):
   - the table and R: the standard `ocv-capacity-table-0` and
     `factory-internal-resistance-micro-ohms` of `battery@0`; the capacity:
@@ -504,6 +504,14 @@ not the curve.
   - `axp22x-soft-battery reset`: moves `runs/` to `archive/` (D47);
   - the full paths of `battery@0` and of `battery-power-supply` in the live
     tree are to be read once on the device (`/proc/device-tree`).
+- The package of the daemon (D79): the unit `axp22x-soft-battery.service`,
+  `ExecStart=/usr/bin/axp22x-soft-battery daemon`, `Before=upower.service`,
+  `WantedBy=multi-user.target`, a preset `enable`; no rule of udev.
+  Proposed: `Type=notify`, `READY=1` once the model is in the module (or
+  at once when there is no model or no module yet): `Before=` alone orders
+  the start, not the write of the model; with `notify` upower starts after
+  the write. `READY=1` is one datagram to `$NOTIFY_SOCKET`
+  (`std::os::unix::net::UnixDatagram`), no crate.
 - Which variant is made first, A or B (D61).
 
 ## Fixed on the review
