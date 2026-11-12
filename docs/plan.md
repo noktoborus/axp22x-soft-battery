@@ -140,12 +140,15 @@ its values; they are not in dmesg.
 
 ### User space
 
-- A rule of udev on the uevent `axp_silent`. Open: the program right
-  in `RUN` (proposed), or `RUN+="/usr/bin/systemctl start --no-block
-  uconsole-soft-battery-save.service"` (`discussion.md`, "Why a
-  service"). At `done` the module puts the new model into its attributes
-  `model_*`, the ones the rule of D13 writes at boot, and sets
+- A rule of udev on the uevent `axp_silent` runs the program right in
+  `RUN` (D27): `RUN+="/usr/bin/uconsole-soft-battery save"`. No service.
+  The program writes its lines into `/dev/kmsg`, next to the lines of the
+  module in dmesg. At `done` the module puts the new model into its
+  attributes `model_*`, the ones the rule of D13 writes at boot, and sets
   `learn_state` to `done`; the program reads them from sysfs.
+- To check on the device: `systemctl cat systemd-udevd`, that its
+  sandbox lets a program of `RUN` write into `/var/lib` and call
+  `systemctl`.
 - The program takes two events (D19):
   - the AXP silent: a forced power off;
   - the AXP silent and a model: it writes the model into the state file
