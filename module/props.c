@@ -88,16 +88,6 @@ static int sb_get_now(struct sb *sb, enum power_supply_property psp,
 	case POWER_SUPPLY_PROP_CAPACITY:
 		val->intval = sb->snap.capacity;
 		return 0;
-	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
-		val->intval = sb->snap.voltage_uv;
-		return 0;
-	case POWER_SUPPLY_PROP_CURRENT_NOW:
-		val->intval = sb->snap.current_ua;
-		return 0;
-	case POWER_SUPPLY_PROP_POWER_NOW:
-		val->intval = div_s64((s64)sb->snap.voltage_uv * sb->snap.current_ua,
-				      1000000);
-		return 0;
 	case POWER_SUPPLY_PROP_VOLTAGE_OCV:
 		val->intval = sb->snap.ocv_uv;
 		return 0;
@@ -112,6 +102,40 @@ static int sb_get_now(struct sb *sb, enum power_supply_property psp,
 	}
 }
 
+/* The values of now at the request; none during the silence of the AXP. */
+static bool sb_is_live(enum power_supply_property psp)
+{
+	return psp == POWER_SUPPLY_PROP_VOLTAGE_NOW ||
+	       psp == POWER_SUPPLY_PROP_CURRENT_NOW ||
+	       psp == POWER_SUPPLY_PROP_POWER_NOW;
+}
+
+static bool sb_has_data(struct sb *sb)
+{
+	guard(mutex)(&sb->lock);
+	return sb->snap.valid && !sb->snap.silent;
+}
+
+static int sb_get_live(struct sb *sb, enum power_supply_property psp,
+		       union power_supply_propval *val)
+{
+	int v_uv, i_ua, ret;
+
+	if (!sb_has_data(sb))
+		return -ENODATA;
+	ret = sb_live_get(sb, &v_uv, &i_ua);
+	if (ret)
+		return ret;
+
+	if (psp == POWER_SUPPLY_PROP_VOLTAGE_NOW)
+		val->intval = v_uv;
+	else if (psp == POWER_SUPPLY_PROP_CURRENT_NOW)
+		val->intval = i_ua;
+	else
+		val->intval = div_s64((s64)v_uv * i_ua, 1000000);
+	return 0;
+}
+
 static int sb_get_property(struct power_supply *psy,
 			   enum power_supply_property psp,
 			   union power_supply_propval *val)
@@ -119,7 +143,9 @@ static int sb_get_property(struct power_supply *psy,
 	struct sb *sb = power_supply_get_drvdata(psy);
 	int ret = sb_get_fixed(sb, psy->battery_info, psp, val);
 
-	return ret == -ENOENT ? sb_get_now(sb, psp, val) : ret;
+	if (ret != -ENOENT)
+		return ret;
+	return sb_is_live(psp) ? sb_get_live(sb, psp, val) : sb_get_now(sb, psp, val);
 }
 
 static void sb_external_power_changed(struct power_supply *psy)

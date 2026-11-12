@@ -107,7 +107,7 @@ static int sb_probe(struct platform_device *pdev)
 	sb->prev_level = -1;
 	sb->prev_status = POWER_SUPPLY_STATUS_UNKNOWN;
 	INIT_DELAYED_WORK(&sb->work, sb_work);
-	ret = devm_mutex_init(dev, &sb->lock);
+	ret = devm_mutex_init(dev, &sb->lock) ?: devm_mutex_init(dev, &sb->live_lock);
 	if (ret)
 		return ret;
 

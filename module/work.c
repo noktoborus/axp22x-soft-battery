@@ -218,8 +218,6 @@ static bool sb_store(struct sb *sb, int status, int level,
 	sb->snap.silent = false;
 	sb->snap.status = status;
 	sb->snap.capacity = level;
-	sb->snap.voltage_uv = s->v_mv * 1000;
-	sb->snap.current_ua = (s->chrg_ma - s->dischrg_ma) * 1000;
 	sb->snap.r_uohm = sb->r_uohm;
 	sb->snap.ocv_uv = ocv_uv;
 	return changed;
@@ -285,6 +283,7 @@ void sb_work(struct work_struct *work)
 				    err[0] ?: err[1] ?: err[2]);
 	} else {
 		sb_good_sample(sb);
+		sb_live_store(sb, s.v_mv * 1000, (s.chrg_ma - s.dischrg_ma) * 1000);
 		sb_take_sample(sb, &s);
 	}
 	sb_schedule(sb);

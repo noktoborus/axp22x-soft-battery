@@ -9,6 +9,7 @@
  *	level.c	the level of the charge by the voltage
  *	r.c	R of the cells, learned while it runs
  *	work.c	the samples, the silence of the AXP, the guard
+ *	live.c	the voltage and the current of now, at a request
  *	props.c	the power supply and its properties
  */
 
@@ -16,6 +17,7 @@
 #define SB_H
 
 #include <linux/atomic.h>
+#include <linux/ktime.h>
 #include <linux/mutex.h>
 #include <linux/power_supply.h>
 #include <linux/types.h>
@@ -46,14 +48,12 @@ struct sb_cv_pair {
 	u32 pct;
 };
 
-/* What get_property gives: a copy of the last sample. */
+/* What get_property gives of the count: a copy of the last sample. */
 struct sb_snapshot {
 	bool valid;
 	bool silent;
 	int status;
 	int capacity;
-	int voltage_uv;
-	int current_ua;
 	int r_uohm;
 	int ocv_uv;
 };
@@ -107,9 +107,16 @@ struct sb {
 	/* The samples left at the period of the start, after the probe or a resume. */
 	int start_left;
 
-	/* The lock of snap, the one lock of the module. */
+	/* The lock of snap. */
 	struct mutex lock;
 	struct sb_snapshot snap;
+
+	/* The last read of the ADC, for a request (live.c), and its lock. */
+	struct mutex live_lock;
+	bool live_valid;
+	ktime_t live_time;
+	int live_v_uv;
+	int live_i_ua;
 };
 
 /* dt.c */
@@ -134,6 +141,10 @@ void sb_work(struct work_struct *work);
 void sb_mean_reset(struct sb *sb);
 void sb_sample_now(struct sb *sb);
 void sb_start_work(struct sb *sb);
+
+/* live.c */
+void sb_live_store(struct sb *sb, int v_uv, int i_ua);
+int sb_live_get(struct sb *sb, int *v_uv, int *i_ua);
 
 /* props.c */
 extern const struct power_supply_desc sb_desc;
