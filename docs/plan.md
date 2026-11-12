@@ -303,10 +303,13 @@ gives about six lines.
 
 ## Open questions
 
-- Q7. Three properties: `power_now` = V × I (without it upower shows no
-  time, "What does patch 0002 do"); `time_to_empty_now` by the mean
-  current of 60 s; `capacity_level` `Critical` under 5 %, `Low` under
-  15 %, `Full` in the full state, else `Normal`.
+- Q7. The values for upower, proposed (`discussion.md`, "Q7: what upower
+  reads"): `power_now` = V × I of the last sample, the sign of
+  `current_now`; `energy_now` = level × `E_full`, `charge_now` = level ×
+  `Q_full`; no `time_to_empty_now`, `time_to_full_now`, `capacity_level`
+  (upower does not read the first two, and the third only at `capacity`
+  = 0); `power_supply_changed()` then at a change of `status` or of the
+  integer percent (D42 without `capacity_level`).
 
 ## Fixed on the review
 
