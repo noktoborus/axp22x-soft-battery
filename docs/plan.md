@@ -256,7 +256,11 @@ sum is old. The version stays until a first release. A tarball of a tag
   - a run that is not sane is kept with a mark and does not count:
     `Q_full` under 30 % or over 200 % of the design, a table where V
     rises with the charge out; a line into `/dev/kmsg` says so;
-  - `reset` moves `runs/` to `runs.<date>/` and deletes `model.env`.
+  - `reset` moves `runs/` to `runs.<date>/` and deletes `model.env`;
+  - when: at the silence, after the run is kept, before the power off;
+    and by hand, `uconsole-soft-battery rebuild`, after a change of the
+    options or of `runs/`: it writes `model.env` and the attributes
+    `model_*` of now (`discussion.md`, "When the mean is made").
 - The values of the model: the step of the current for `R` (200 mA), the
   21 points of the table.
 - Which register of the AXP228 marks the end of the charge.
