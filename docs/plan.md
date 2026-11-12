@@ -257,9 +257,9 @@ gives about six lines.
     ATTR{model_q_full}="$env{MODEL_Q_FULL}", ..., \
     ATTR{model_commit}="1"
   ```
-- The mean model (D29, D35; the rest proposed, Q6): `V_end` is the
-  highest of all valid runs since `reset`, + 50 mV (D35); the other values
-  and each pair (V, I) of the table: the mean of the last 5 valid runs.
+- The mean model (D29, D35, D48; the rest proposed, Q6): `V_end` is the
+  highest of the runs in `runs/` (the last 5), + 50 mV; the other values
+  and each pair (V, I) of the table: the mean of the same runs.
 - `/var` is to be mounted when the rule runs; one root partition gives it.
 
 ### The packages
@@ -301,9 +301,8 @@ gives about six lines.
     └── invalid/   the runs that failed the check
     ```
     `load` moves from `runs/` to `archive/` all but the last 5 (at boot);
-    `reset` moves all of `runs/` to `archive/`. Open: of which runs the
-    highest `V_end` (D35) is taken now that `archive/` does not tell a
-    reset from an age: `runs/` only, or `runs/` and `archive/`;
+    `reset` moves all of `runs/` to `archive/`. The highest `V_end` (D35)
+    is of `runs/` only (D48);
   - the mean of the last 5 valid runs, no limit of age;
   - the check of a run (`Q_full` in 30..200 % of the design, V of the table
     falls with the charge out); `seq` in the name, the date inside;
