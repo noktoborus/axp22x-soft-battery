@@ -492,6 +492,18 @@ not the curve.
     (written); `model_commit` = `default` goes back to `dt` if there is one;
   - after a run the daemon (or `save` of A) writes the model to its log as a
     piece of the device tree, to be copied into an overlay by hand.
+- Q13. The modes of the program of B (D77), proposed:
+  - `axp22x-soft-battery daemon`: the service of D68 runs it;
+  - `axp22x-soft-battery gen-dts`: makes the mean model of `runs/` (as the
+    daemon does) and prints to stdout an overlay `.dts` with it, by D75:
+    `ocv-capacity-table-0` and `factory-internal-resistance-micro-ohms` on
+    `battery@0`, the capacities and `end-microvolt` on the cell, both by
+    `target-path` (a label of the overlay `clockworkpi-uconsole-cm5` is not
+    seen from another overlay, 0011); `dtc -@ -I dts -O dtb` makes the
+    `.dtbo`; `--run <file>` takes one run in place of the mean;
+  - `axp22x-soft-battery reset`: moves `runs/` to `archive/` (D47);
+  - the full paths of `battery@0` and of `battery-power-supply` in the live
+    tree are to be read once on the device (`/proc/device-tree`).
 - Which variant is made first, A or B (D61).
 
 ## Fixed on the review
