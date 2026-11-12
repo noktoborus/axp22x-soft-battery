@@ -308,8 +308,20 @@ gives about six lines.
 
 ## Open questions
 
-None. The design is closed on 2026-11-12; what is left are the steps
-above.
+- Q8. The guard of the silence as a short module of its own, in place of
+  patch 0010 (`discussion.md`, "The guard as a module"), proposed:
+  - `uconsole_axp_guard`, about 60 lines, in our package, loaded by
+    `/usr/lib/modules-load.d/uconsole-axp-guard.conf`;
+  - each 10 s (`system_freezable_wq`: no run between the freeze and the
+    thaw of a suspend, so no code of suspend) it reads `online` of
+    `axp20x-ac` by `power_supply_get_by_name()` and
+    `power_supply_get_property()`: `axp20x_ac_power` reads 0x00 of the AXP
+    for it; a silent AXP gives an error;
+  - 12 errors in a row (about 2 min) → `hw_protection_trigger("AXP
+    silent", 20000)`; one good read sets the count to 0;
+  - dmesg: the first error, the trigger; the parameters `poll_ms` (10000),
+    `fails` (12);
+  - then 0010 leaves the series again (D56 changed; the series, D4).
 
 ## Fixed on the review
 
