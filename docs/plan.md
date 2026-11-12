@@ -9,8 +9,8 @@ of learning, is made (D61, D80); variant A is kept apart, at the end.
 | part | what | name | package |
 |---|---|---|---|
 | the module of the kernel | reads the AXP, works out the level, gives the battery | `axp22x_soft_battery` | `sys-power/axp22x-soft-battery` |
-| the program, in Rust | `daemon`: learns; `gen-dts`: a `.dts` of the model; `import`: a run from a log of axp-log | `axp22x-soft-battery` | `sys-power/axp22x-soft-battery-daemon` |
-| the device tree | the model and the settings of the module | properties of `battery@0` and of the cell `battery-power-supply` | an overlay made by the user from `gen-dts` |
+| the program, in Rust | `daemon`: learns; `gen-dts`: a `.dts` of the curves; `import`: a run from a log of axp-log | `axp22x-soft-battery` | `sys-power/axp22x-soft-battery-daemon` |
+| the device tree | the model and the settings of the module | properties of `battery@0` and of the cell `battery-power-supply` | the overlay of the package; an overlay of the curves from `gen-dts` |
 | the files | the runs | `/var/lib/axp22x-soft-battery/` | made by the daemon |
 
 Names: D62, D64. The module reads its model only from the device tree;
@@ -175,8 +175,8 @@ The module has no default (D106). Every value below is required, but
   `axp22x-soft-battery.dts` of the package `sys-power/axp22x-soft-battery`;
   the line `dtoverlay=axp22x-soft-battery` goes after the one of the
   device, by hand (D32);
-- `gen-dts`: an overlay that sets again the learned values only; its line
-  goes after the one of the package.
+- `gen-dts`: an overlay of the learned curves only (D107); its line goes
+  after the one of the package.
 
 | node | property | set by | value | what |
 |---|---|---|---|---|
@@ -186,9 +186,9 @@ The module has no default (D106). Every value below is required, but
 | `battery@0` | `energy-full-design-microwatt-hours` | the device | 24790000 | `energy_full_design` |
 | `battery@0` | `device-chemistry` | the device | `lithium-ion` | `technology` |
 | `battery@0` | `ocv-capacity-table-0`, `ocv-capacity-celsius` | the package, `gen-dts` | the mean of the three logs (D59), at their mean temperature | the curve of the discharge (D75, D86) |
-| `battery@0` | `factory-internal-resistance-micro-ohms` | the package, `gen-dts` | 87000 | R (D73, D75, D104) |
-| the cell | `axp22x-soft-battery,energy-full-microwatt-hours` | the package, `gen-dts` | 24790000 | `energy_full` (D75, D95) |
-| the cell | `axp22x-soft-battery,end-microvolt` | the package, `gen-dts` | 3200000 | 0 % (D21, D35, D73) |
+| `battery@0` | `factory-internal-resistance-micro-ohms` | the package | 87000 | R (D73, D75, D104) |
+| the cell | `axp22x-soft-battery,energy-full-microwatt-hours` | the package | 24790000 | `energy_full` (D75, D95) |
+| the cell | `axp22x-soft-battery,end-microvolt` | the package | 3200000 | 0 % (D21, D35, D73) |
 | the cell | `axp22x-soft-battery,charge-cv-table` | `gen-dts` | none: optional | the curve of the charge: pairs of µA and percent (D91) |
 | the cell | `axp22x-soft-battery,sample-interval-ms` | the package | 10000 | the period of the work (D70, D72) |
 | the cell | `axp22x-soft-battery,full-margin-microvolt` | the package | 50000 | the full state (D39) |
@@ -271,14 +271,19 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
 
 ### `axp22x-soft-battery gen-dts`
 
-The model of `discharge/full/` as it would be for the module (D81); with
-`--use-partial` the runs of `discharge/partial/` stopped at 10 % or under go into the
-means too, the others are skipped with a line (D99): the mean of the
-runs (each value, each point of the tables; R of the runs with R not 0,
-none written when all are 0, D104), `end-microvolt` = the highest
-`V_end` + 50 mV (D35, D48), `ocv-capacity-celsius` = the mean temperature
-(D86); `end-microvolt` only of `discharge/full/`, none written if it is empty
-(3.2 V of D21 holds); an overlay `.dts` with `target-path` to `battery@0` and to the cell
+The curves only, nothing more (D107):
+
+- the curve of the discharge: the mean of each point of the tables of
+  `discharge/full/`; with `--use-partial` the runs of `discharge/partial/`
+  stopped at 10 % or under go into the mean too, the others are skipped
+  with a line (D99); `ocv-capacity-table-0` and `ocv-capacity-celsius`
+  (the mean temperature of those runs, D86) on `battery@0`;
+- the curve of the charge: the mean of the runs of `charge/full/`;
+  `axp22x-soft-battery,charge-cv-table` on the cell.
+
+A curve with no run is not written; with none of both, a line and the exit
+code 1. R, `energy-full-microwatt-hours` and `end-microvolt` stay as the
+overlay of the package sets them. An overlay `.dts` with `target-path`
 (D82), to stdout. The user compiles it (`dtc -@ -I dts -O dtb`) and puts
 it into `config.txt` by hand (D32, D87).
 
