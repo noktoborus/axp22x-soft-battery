@@ -34,7 +34,32 @@ Not decided where it says "proposed".
   0x00 = 0xc4, 0x01 = 0x30, 4204-4205 mV, 12-50 mA. No IRQ.
   (`discussion.md`, "The end of the charge", "The start of the
   discharge logs".)
-- The end: the AXP does not answer on I2C, some reads in a row.
+- The end: the AXP does not answer on I2C, 3 reads in a row (proposed;
+  `discussion.md`, "The work, the lock, the silence"). Then the work
+  stops: the AXP did not answer again in any log.
+
+### The work and the lock
+
+Proposed; the scheme is on the desk `uconsole-soft-battery-work` of
+showcase, `shots/1-threads.scheme`.
+
+- One `delayed_work` each 1 s: it reads 0x00, 0x01 and the ADC by the
+  regmap of the AXP, with no lock of its own; then, under one mutex, it
+  counts (the time between samples by `ktime`, so a late work counts
+  right), steps the learning, adds a point, steps the level.
+- One mutex for the whole state: the count, the level, the points, the
+  histogram of R, the model in use, the draft, the run. Under it only the
+  sums, microseconds.
+- Out of the mutex: the read of I2C (ms on `i2c-gpio`),
+  `power_supply_changed()`, `kobject_uevent_env()`.
+- `power_supply_changed()` only when `status` changes or the level moves
+  by 1 %: it sends a uevent `change` each time, and udev reads its rules.
+  The power supply class calls `get_property` from its own work, not from
+  ours: the mutex is not taken twice.
+- `get_property` and the attributes take the mutex for a copy, and
+  return.
+- The rule of `axp_silent` matches its own key only, not each uevent
+  `change`.
 - States of the learning: `idle` → `learning` at each end of a full
   charge (D14); `learning` counts; a new end of a charge starts it again;
   `learning` → `done` at the silence of the AXP: the module makes the
