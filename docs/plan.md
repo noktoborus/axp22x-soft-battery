@@ -397,3 +397,5 @@ sum is old. The version stays until a first release. A tarball of a tag
     point where the voltage reaches `V_thr`; C' steers the level to 0 %
     there; the level is 0 % at once when the mean of 30 s of the voltage
     is `V_thr` or under.
+- Put off: the module as a patch of the series of the kernel, not a
+  package of its own, and what goes with it: `plans/uconsole-soft-battery-in-tree.md`.
