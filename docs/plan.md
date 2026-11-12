@@ -206,11 +206,12 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
     the file `discharge/full/<seq>.env` or `discharge/invalid/<seq>.env` (D45, D52, D100), `fsync`;
     the oldest past 5 in `discharge/full/` to `discharge/archive/` (D90, D100); `systemctl poweroff
     --force` (D49).
-- A run of a charge (D91): from the charger in to `Full`, the device on;
-  each read kept (the charge in, V, I); at `Full` each point gets its
+- A run of a charge (D91, D101): from the charger in to `Full`, the device
+  on; each read kept (the charge in, V, I); at `Full` each point gets its
   percent back from 100 % by the charge in and `Q_full`; the points of the
   phase of constant voltage give the curve of the charge (the current →
-  the percent).
+  the percent); the check, then `charge/full/<seq>.env` or
+  `charge/invalid/<seq>.env`; the oldest past 5 to `charge/archive/`.
 - What ends a run, with a line in the journal, and the daemon exits (D89,
   D97): a suspend (by `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`, D66, D69); a
   gap of over 60 s between two reads; the directory of the battery gone; a
@@ -253,10 +254,14 @@ learning.
 │   ├── archive/   the valid runs to the silence past 5
 │   ├── invalid/   the runs that failed the check
 │   └── partial/   the runs cut short before the silence (D99)
-└── charge/        the runs of a charge (Q17)
+└── charge/
+    ├── full/      the last 5 charges that reached Full (the curve of the charge)
+    ├── archive/   those past 5
+    └── invalid/   those that failed the check
 ```
 
-(D45-D48, D90, D99, D100.) A file: lines `KEY=value`, `seq` of 6 digits (D52).
+(D45-D48, D90, D99, D100, D101.) A charge cut before `Full` is printed,
+not kept. A file: lines `KEY=value`, `seq` of 6 digits (D52).
 
 ## The packages
 
@@ -299,14 +304,6 @@ user.
 
 ## Open questions
 
-- Q17. The runs of a charge under `charge/` (D100), proposed: a run of a
-  charge has no known start, but its end is known: `Full` is 100 %, and
-  each point gets its percent back from there (D91). So a charge that
-  reached `Full` is whole for the curve of the charge: `charge/full/`, the
-  last 5 for the mean, `charge/archive/` past them, `charge/invalid/` for one
-  that failed a check (the current of the charge falls along the phase of
-  constant voltage). A charge cut before `Full` has no point of 100 %: no
-  percent at all; printed (D98), not kept.
 - With the defaults of upower (the critical action at 2 %), a run is broken
   off before the silence (D97): it goes to `discharge/partial/` (D99); whole runs,
   and so `V_end`, come only if the user sets upower so, or by `import`.
