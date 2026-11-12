@@ -13,7 +13,7 @@ not answered yet is in `plan.md`, "Open questions".
 | D6 | 2026-11-12 | user | First step: the kernel module in a package (ebuild) of its own. |
 | D7 | 2026-11-12 | user | A module shows the right level of the charge, by the learned model. |
 | D8 | 2026-11-12 | user | The AXP is ignored as a store: it forgets what was written into its registers. No state of the module is kept in the AXP (not the buffer 0x04-0x0F, not E0:E1, not E2:E3). |
-| D9 | 2026-11-12 | user | When the AXP cuts the power by `V_OFF` in place of going silent, the learning is closed by its last saved point. The point is saved on the disk (D8). |
+| D9 | 2026-11-12 | user | Replaced by D17. Was: a learning cut by `V_OFF` is closed by its last point saved on the disk. |
 | D10 | 2026-11-12 | user | Assumed: `poweroff` on the CM5 cuts the power of the whole device. |
 | D11 | 2026-11-12 | user | The module never powers the system off; only user space decides. |
 | D12 | 2026-11-12 | user | No more logic and no workarounds in the kernel module. A guard against a failure of user space, when it is needed, is a separate module. |
@@ -21,3 +21,7 @@ not answered yet is in `plan.md`, "Open questions".
 | D14 | 2026-11-12 | user | The learning starts each time a charge ends in full; no start by hand. |
 | D15 | 2026-11-12 | user | The module tells its events in dmesg: it is loaded, the model is awaited, the learning started, the learning done, and others (the list in `plan.md`). |
 | D16 | 2026-11-12 | user | While the learning runs, it is kept in the memory of the module only; the memory is to be small. At its end a uevent makes user space write the state file. |
+| D17 | 2026-11-12 | user | A learning broken by a cut by `V_OFF` or a reboot is a failed learning and is dropped. The next full charge starts a new one. Replaces D9. |
+| D18 | 2026-11-12 | user | upower stays. The module knows nothing of upower, nor when and by whom the system is powered off. When the module finds the AXP silent, a learning that runs ends; else the module does nothing more. |
+| D19 | 2026-11-12 | user | At the silence of the AXP the module always sends a uevent. The program takes two events: the AXP silent (it forces a power off); the AXP silent with a model (it writes the state file, then forces a power off). |
+| D20 | 2026-11-12 | user | The module makes the model of the curve, not user space: the program is not to run all the time or start often to write to the disk. |

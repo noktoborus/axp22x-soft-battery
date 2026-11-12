@@ -34,9 +34,14 @@ Not decided where it says "proposed".
 - The end: the AXP does not answer on I2C, some reads in a row.
 - States of the learning: `idle` → `learning` at each end of a full
   charge (D14); `learning` counts; a new end of a charge starts it again;
-  `learning` → `done` at the silence of the AXP. At `done`: the values in
-  sysfs, one uevent `change`; user space makes the state file from them
-  (D16). Nothing more (D11, D12).
+  `learning` → `done` at the silence of the AXP: the module makes the
+  model of the curve (D20). A learning broken by a reboot or a cut by
+  `V_OFF` is lost; it is a failed learning (D17).
+- At the silence of the AXP the module sends one uevent `change` (D19):
+  `UCONSOLE_BATTERY_EVENT=axp_silent`, and with a learning done also the
+  model in the same keys as `model.env` (below). With no learning the
+  module does nothing more (D18). It knows nothing of upower and of who
+  powers off (D11, D12, D18).
 - While the learning runs, all its data is in the memory of the module
   only (D16). Nothing goes to the disk before `done`.
 
@@ -50,20 +55,24 @@ Proposed. One allocation at the probe; no allocation in the work.
 | the sums of the point that is filled now: V, I, count | 24 B |
 | the count: charge and energy (s64 each), time of the start, last sample | 32 B |
 | the end: `V_end`, `I_end`, time | 12 B |
+| the resistance `R`: the sum of dV/dI at steps of the current, the count | 16 B |
 | the model in use: 21 points of OCV, `Q_full`, `E_full`, `R`, `V_end` | about 100 B |
 
 About 2.2 KiB in all. The step is `charge_full_design` / 256 (35 mAh
 for 9 Ah), so 512 points hold up to 2 × the design. Past that the count
 goes on and no point is added; dmesg says it once.
 
-The curve does not go into the uevent: the environment of a uevent is at
-most 2048 B (`UEVENT_BUFFER_SIZE`). The uevent has the summary
-(`Q`, `E`, `V_end`, `I_end`, the time); the curve is a binary attribute
-of sysfs, `learn_curve`, read by user space.
+The module makes the model at `done` (D20), in integers:
 
-Proposed: user space makes the model of the curve (the table of OCV,
-`R`); the module only counts and gives the raw points. That keeps the
-module small (D12).
+- `R`: the mean of dV/dI over pairs of samples 1 s apart where the
+  current moved by 200 mA or more (proposed values);
+- the table of OCV: 21 points, one each 5 % of the charge out, taken
+  from the curve between its points, OCV = V + I × R;
+- `Q_full`, `E_full`, `V_end`, `I_end` from the count.
+
+The model is about 300 B as text: it goes into the uevent whole (the
+environment of a uevent is at most 2048 B, `UEVENT_BUFFER_SIZE`). The
+curve stays in the module; user space does not read it.
 
 ### Messages of dmesg
 
@@ -83,7 +92,8 @@ an event, never in a loop. `dev_*` of the device `uconsole-battery`.
 | warn | the points are full | `learning: 512 points full at 18000 mAh, curve stops, count goes on` |
 | warn | the AXP silent | `AXP silent: 6 reads failed, last -6` |
 | notice | the learning done | `learning done: 9067 mAh, 33.3 Wh in 5 h 40 min, end 3100 mV at 1907 mA` |
-| warn | the AXP silent, no learning | `AXP silent, no learning in progress` |
+| info | the model made | `model made: R 95 mOhm, OCV 4133..3287 mV, uevent sent` |
+| warn | the AXP silent, no learning | `AXP silent, no learning in progress, uevent sent` |
 | warn | a read of the ADC failed (not the silence) | `ADC read failed: -5`, rate limited |
 | warn | the module removed during the learning | `removed: learning lost, 1234 mAh counted` |
 
@@ -118,11 +128,19 @@ its values; they are not in dmesg.
 
 ### User space
 
-- A rule of udev on the uevent: `RUN+="/usr/bin/systemctl start
-  --no-block uconsole-battery-save.service"`; udev kills a long `RUN`.
-- The service, oneshot: it reads the summary and `learn_curve`, makes
-  the model and writes the state file `/var/lib/uconsole-battery/model.env`,
-  then `OnSuccess=poweroff.target`.
+- A rule of udev on the uevent `axp_silent`: `RUN+="/usr/bin/systemctl
+  start --no-block uconsole-battery-save.service"`, with the keys of the
+  event passed to it; udev kills a long `RUN`.
+- The program takes two events (D19):
+  - the AXP silent: a forced power off;
+  - the AXP silent and a model: it writes the model into the state file
+    `/var/lib/uconsole-battery/model.env` (the keys of the event, as they
+    are), syncs, then a forced power off.
+- It runs only at that event: no daemon, no write to the disk during the
+  learning (D16, D20).
+- Proposed: the forced power off is `systemctl poweroff --force`: no stop
+  of the services; systemd kills the processes and unmounts the file
+  systems.
 - The model reaches the module at boot by a rule of udev (D13), on the
   event `add` of the power supply:
   ```
@@ -172,19 +190,6 @@ its values; they are not in dmesg.
 
 ## Open questions
 
-- D9 against D16: D9 closes the learning by its last point saved on the
-  disk when the AXP cuts by `V_OFF`; D16 keeps the learning in memory
-  only, so a cut by `V_OFF` or a reboot loses it. Proposed: D9 goes; the
-  next full charge starts a new learning (D14).
-- upower against the learning on each cycle: a right level reaches 0 %
-  before the AXP goes silent, and `CriticalPowerAction` of upower powers
-  off first; the learning never ends. Proposed: the action of upower is
-  off for good, and the silence of the AXP is the power off at a low
-  battery; the warnings of upower stay.
-- The silence of the AXP with no learning: the module still sends the
-  uevent, and user space powers off? Else the cells drain (the work of
-  0010).
-- The model of the curve: made by user space (proposed) or by the module.
 - 0 %: the end of the learned run (proposed), or the point where
   V − I × R reaches `V_end` at the current load.
 - One module (count, learning, level) or two.
@@ -194,5 +199,7 @@ its values; they are not in dmesg.
 - How the ebuild in repo-uconsole takes the source of this repository
   (`package.self` of `uconsole/linux/AGENTS.md`).
 - The capacity depends on the load (9067 mAh at 1.6 A): keep the last run,
-  or a mean of some runs.
+  or a mean of some runs; and who makes the mean.
+- The values of the model: the step of the current for `R` (200 mA), the
+  21 points of the table.
 - Which register of the AXP228 marks the end of the charge.
