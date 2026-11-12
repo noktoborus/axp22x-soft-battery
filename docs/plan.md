@@ -110,8 +110,7 @@ its values; they are not in dmesg.
   current; `V_end`, `I_end` at the silence (3.10 V at 1.9 A in the run of
   2026-11-08, `hardware/notes/discharge-cm5.md`).
 - With no model: `charge_full_design` of the device tree and the curve of
-  `hardware/notes/discharge-cm5.md`. Proposed: the end is 3.2 V under
-  load, a property of the node of the module in its overlay
+  `hardware/notes/discharge-cm5.md`. The end is 3.2 V under load (D21), a property of the node of the module in its overlay
   (`uconsole,end-microvolt = <3200000>`); the curve is cut there. With a
   model the end is its `V_end`, lower or higher than 3.2 V.
   (`discussion.md`, "The end by 3.2 V")
