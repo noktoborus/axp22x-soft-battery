@@ -26,12 +26,23 @@
 #error "CONFIG_BATTERY_AXP20X=y: axp20x_battery must be a module (m) or off (n)"
 #endif
 
+/*
+ * The map of the channels is made by axp20x_adc at its probe; until then
+ * the lookup gives -ENODEV, and the probe waits for it, as
+ * axp20x_battery.c does.
+ */
+static int sb_channel_error(struct iio_channel *chan)
+{
+	return PTR_ERR(chan) == -ENODEV ? -EPROBE_DEFER : PTR_ERR(chan);
+}
+
 static int sb_get_channel(struct sb *sb, const char *name,
 			  struct iio_channel **chan)
 {
 	*chan = devm_iio_channel_get(sb->dev, name);
 	if (IS_ERR(*chan))
-		return dev_err_probe(sb->dev, PTR_ERR(*chan), "no IIO %s\n", name);
+		return dev_err_probe(sb->dev, sb_channel_error(*chan),
+				     "no IIO %s\n", name);
 	return 0;
 }
 
