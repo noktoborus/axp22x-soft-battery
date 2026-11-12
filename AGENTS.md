@@ -54,6 +54,12 @@ THEN logic that guards against a failure of user space is a separate
 EX-  a call of `hw_protection_trigger()` when user space does not power
      off in time
 EX-  a uevent sent again every 10 s while the AXP is silent
+RULE module.impact : the module weighs as little as it can on the running
+     system: as few locks as it can, the interfaces of the drivers there
+     are before a read of its own
+EX-  a read of 0x00 each second for the charger, when `axp20x-ac` tells it
+     by its IRQ
+RULE module.small : the module is small and easy to read
 RULE module.poweroff : the module never powers the system off; only user
      space decides it
 RULE module.axp : the AXP is not a store and its gauge is not used
