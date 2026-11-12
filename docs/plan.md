@@ -246,8 +246,11 @@ gives about six lines.
 
 ## Open questions
 
-- Q1. `status` by the full state and the charger: `Full`, `Charging`,
-  `Discharging` (the marker itself: D39).
+- Q1. Bit 6 of 0x01 too, by the regmap of `axp20x` (a read of the bus:
+  0x00-0x01 are volatile): read in the work only while the charger is in;
+  the full state = D39 and bit 6 = 0; `status`: `Charging` (bit 6 = 1),
+  `Full`, `Not charging` (bit 6 = 0, not full), `Discharging` (no
+  charger). `get_property` gives the last sample, no read of the bus.
 - Q2. The silence: 3 failed reads in a row, then the work stops.
 - Q3. The work in time: one work each 1 s; one mutex, for sums and copies
   only; `power_supply_changed()` at a change of `status` or of 1 %.
