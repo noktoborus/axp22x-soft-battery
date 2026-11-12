@@ -244,7 +244,13 @@ sum is old. The version stays until a first release. A tarball of a tag
   the boot; a section in the included file. Else: a USE flag of
   `uconsole-pi-firmware`.
 - The capacity depends on the load (9067 mAh at 1.6 A): keep the last run,
-  or a mean of some runs; and who makes the mean.
+  or a mean of some runs; and who makes the mean. Worked out in
+  `discussion.md`, "The last run or a mean". Proposed: the module, at
+  `done`, mixes the new run into the model in use: new = old + α × (run −
+  old), each value and each pair (V, I) of the table; α = 0.5, a
+  parameter writable at run time. The first learned run takes the place
+  of the default model whole. A new set of cells: `uconsole-soft-battery
+  reset` drops the state file.
 - The values of the model: the step of the current for `R` (200 mA), the
   21 points of the table.
 - Which register of the AXP228 marks the end of the charge.
