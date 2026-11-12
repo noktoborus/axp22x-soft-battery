@@ -341,6 +341,16 @@ sample) are in `discussion.md`, "dmesg, the list after D33-D36". The
 prefix is `axp22x_soft_battery axp20x-battery-power-supply:`. A cycle
 gives about six lines.
 
+The mode of the level (D76), a line of `info` at the probe and at each
+change, then `power_supply_changed()` (the level is worked out again):
+
+```
+mode: by voltage: no model (no ocv-capacity-table-0, no charge-full in the device tree); the curve built in, R 87 mOhm
+mode: by model: dt, 9067 mAh, 33.3 Wh, R 78 mOhm, end 3211 mV, 21 points
+mode: by model: loaded, 8542 mAh, 31.2 Wh, R 78 mOhm, end 3211 mV, 21 points
+mode: by voltage: default asked by model_commit
+```
+
 ### User space
 
 - The program `axp22x-soft-battery`, in Rust (D25), package
