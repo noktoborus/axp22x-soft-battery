@@ -245,14 +245,15 @@ sum is old. The version stays until a first release. A tarball of a tag
 - The values of C' (D23): 30 s, f in 0.5..2, 30 %, 10 %; to check by
   the level at the silence, in dmesg.
 - The line `dtoverlay=uconsole-soft-battery` of `config.txt`. Worked out in
-  `discussion.md`, "The line of config.txt". Proposed: `config.txt` of
-  `uconsole-pi-firmware` gets once a line `include uconsole-soft-battery.txt`
-  at its end; the package of the module installs
-  `/boot/uconsole-soft-battery.txt` (`[pi5]`, `dtoverlay=uconsole-soft-battery`).
-  The package in place turns the new way on, the package gone turns it
-  off. To check on the device: a missing file of `include` does not stop
-  the boot; a section in the included file. Else: a USE flag of
-  `uconsole-pi-firmware`.
+  `discussion.md`, "The line of config.txt" and "include in the
+  documentation". Proposed: `config.txt` of `uconsole-pi-firmware` gets
+  once a line `include uconsole-soft-battery.txt` at its end; the package
+  of the module installs `/boot/uconsole-soft-battery.txt`:
+  `[cm5]`, `dtoverlay=uconsole-soft-battery`, `[all]`. The package in
+  place turns the new way on, the package gone turns it off. The
+  documentation does not say what a missing file of `include` does, nor
+  how sections go through it: a test on the device first (`discussion.md`).
+  Else: a USE flag of `uconsole-pi-firmware`.
 - The mean model (D29, D30). Worked out in `discussion.md`, "The mean
   model". Proposed:
   - all runs kept, `runs/<seq>.env`; `seq` a number the program counts up;
