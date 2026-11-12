@@ -207,7 +207,7 @@ file (`Documentation/filesystems/sysfs.rst`):
   `internal_resistance` and `model_source`.
 - The checks of `model_commit`: the two lists of the same length, 2 to 64
   points; the voltage of the table falls along it; `Q_full` 0.5-50 Ah;
-  R 10-500 mΩ; `V_end` 2.9-3.8 V. A bad value: `-EINVAL`, one line in
+  R 10-500 mΩ; `V_end` from `voltage-min-design` of `battery@0` (`V_OFF`, D51) to 3.8 V. A bad value: `-EINVAL`, one line in
   dmesg, the model in use stays.
 - The silence (D19): the module sets `health` to `Dead`, `learn_state` to
   `done` when a run is there, and calls `power_supply_changed()`: the
@@ -302,7 +302,7 @@ gives about six lines.
   - the check of a run before `runs/`, proposed: the checks of
     `model_commit` (D43): the lists of one length, the voltage falls along
     the table, `Q_full` 0.5-50 Ah, R 10-500 mΩ or 0 (not learned, D34),
-    `V_end` 2.9-3.8 V. Not "30-200 % of `charge_full_design`": a wrong value
+    `V_end` from `voltage-min-design` of `battery@0` (`V_OFF`, D51) to 3.8 V. Not "30-200 % of `charge_full_design`": a wrong value
     of the device tree would throw good runs away. A run that passes is
     sure to pass `model_commit` as a part of the mean;
   - `seq`, proposed: 1 + the highest `seq` in the names of `runs/`,
