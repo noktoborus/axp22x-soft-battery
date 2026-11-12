@@ -6,7 +6,9 @@
  */
 
 #include <linux/device.h>
+#include <linux/array_size.h>
 #include <linux/limits.h>
+#include <linux/math.h>
 #include <linux/of.h>
 #include <linux/power_supply.h>
 #include <linux/slab.h>
@@ -66,36 +68,62 @@ int sb_find_node(struct sb *sb)
 			     "more than one node \"" SB_COMPATIBLE "\"\n");
 }
 
-/* V_OFF of the AXP22x: 2.6-3.3 V by 0.1 V. */
-static int sb_check_voltage_min(struct sb *sb, int uv)
+/* A value between two steps of a register takes a step, with a line. */
+static void sb_tell_rounded(struct sb *sb, const char *name, int *val, int to)
 {
-	if (uv >= 2600000 && uv <= 3300000 && !(uv % 100000))
-		return 0;
-	return sb_refuse(sb, "voltage-min-design-microvolt", uv,
-			 "not 2600000..3300000 by 100000");
+	if (*val == to)
+		return;
+	dev_warn(sb->dev, "%s rounded: %d to %d\n", name, *val, to);
+	*val = to;
 }
 
-/* The target of the charge: one of the four codes of the AXP22x. */
-static int sb_check_charge_voltage(struct sb *sb, int uv)
+/*
+ * V_OFF of the AXP22x: 2.6-3.3 V by 0.1 V. Between two steps it goes up:
+ * the cut comes sooner, never later.
+ */
+static int sb_round_voltage_min(struct sb *sb, int *uv)
 {
-	switch (uv) {
-	case 4100000:
-	case 4200000:
-	case 4220000:
-	case 4240000:
-		return 0;
+	const char *name = "voltage-min-design-microvolt";
+
+	if (*uv < 2600000 || *uv > 3300000)
+		return sb_refuse(sb, name, *uv, "not in 2600000..3300000");
+	sb_tell_rounded(sb, name, uv, 2600000 + roundup(*uv - 2600000, 100000));
+	return 0;
+}
+
+/*
+ * The target of the charge: the four codes of the AXP22x. Between two
+ * codes it goes down: the cells are never charged over the value.
+ */
+static int sb_round_charge_voltage(struct sb *sb, int *uv)
+{
+	static const int codes[] = { 4240000, 4220000, 4200000, 4100000 };
+	const char *name = "constant-charge-voltage-max-microvolt";
+	int i;
+
+	if (*uv > codes[0])
+		return sb_refuse(sb, name, *uv, "over 4240000");
+	for (i = 0; i < ARRAY_SIZE(codes); i++) {
+		if (*uv >= codes[i]) {
+			sb_tell_rounded(sb, name, uv, codes[i]);
+			return 0;
+		}
 	}
-	return sb_refuse(sb, "constant-charge-voltage-max-microvolt", uv,
-			 "not 4100000, 4200000, 4220000 or 4240000");
+	return sb_refuse(sb, name, *uv, "under 4100000");
 }
 
-/* The current of the charge of the AXP22x: 300-2550 mA by 150 mA. */
-static int sb_check_charge_current(struct sb *sb, int ua)
+/*
+ * The current of the charge of the AXP22x: 300-2550 mA by 150 mA. Between
+ * two steps it goes down, as axp20x_battery.c does.
+ */
+static int sb_round_charge_current(struct sb *sb, int *ua)
 {
-	if (ua >= 300000 && ua <= 2550000 && !((ua - 300000) % 150000))
-		return 0;
-	return sb_refuse(sb, "constant-charge-current-max-microamp", ua,
-			 "not 300000..2550000 by 150000");
+	const char *name = "constant-charge-current-max-microamp";
+
+	if (*ua < 300000 || *ua > 2550000)
+		return sb_refuse(sb, name, *ua, "not in 300000..2550000");
+	sb_tell_rounded(sb, name, ua, 300000 + rounddown(*ua - 300000, 150000));
+	return 0;
 }
 
 /*
@@ -119,7 +147,11 @@ static int sb_check_ocv_table(struct sb *sb, struct power_supply_battery_info *i
 	return 0;
 }
 
-/* The simple-battery of monitored-battery, as the core read it. */
+/*
+ * The simple-battery of monitored-battery, as the core read it. The values
+ * of the registers are rounded in place, so the properties show what the
+ * PMIC was given.
+ */
 static int sb_check_battery_info(struct sb *sb)
 {
 	struct power_supply_battery_info *info = sb->psy->battery_info;
@@ -134,9 +166,9 @@ static int sb_check_battery_info(struct sb *sb)
 	if (info->voltage_max_design_uv <= 0)
 		return sb_missing(sb, "voltage-max-design-microvolt");
 
-	ret = sb_check_voltage_min(sb, info->voltage_min_design_uv) ?:
-	      sb_check_charge_voltage(sb, info->constant_charge_voltage_max_uv) ?:
-	      sb_check_charge_current(sb, info->constant_charge_current_max_ua);
+	ret = sb_round_voltage_min(sb, &info->voltage_min_design_uv) ?:
+	      sb_round_charge_voltage(sb, &info->constant_charge_voltage_max_uv) ?:
+	      sb_round_charge_current(sb, &info->constant_charge_current_max_ua);
 	if (ret)
 		return ret;
 
