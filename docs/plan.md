@@ -365,10 +365,15 @@ sum is old. The version stays until a first release. A tarball of a tag
     change of the options or of `runs/`.
 - The values of the model and of C'. Worked out in `discussion.md`,
   "The values, from two logs". Proposed:
-  - R: proposed now, a constant of the device tree,
-    `uconsole,resistance-micro-ohms = <87000>`, not learned
-    (`discussion.md`, "Why R"). The lines below are the way to learn it,
-    if it is taken after all:
+  - R: proposed now, a part of the model, learned in each run from the
+    step at its start (`discussion.md`, "R learned at the start of a
+    run"): R = (the voltage at rest, the mean of the last 5 full samples
+    − the mean voltage of the first 60 s under load) / (the mean current
+    of those 60 s + the current at rest); in `run_r`; no R when the step
+    is under 300 mA. The program takes the mean of `RUN_R` with the
+    rest (D29). With no run: `uconsole,resistance-micro-ohms = <87000>` of
+    the device tree. The steps below 50 % and the histogram are not
+    needed then. The lines below were the way by the steps:
   - R: learned by the module in each run, from the voltage and the
     current of the ADC; not the RDC of the AXP (`module.axp`). One R per
     model, the same through a discharge. Only steps below 50 % count,
