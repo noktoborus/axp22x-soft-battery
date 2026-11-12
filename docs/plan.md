@@ -36,38 +36,43 @@ starts the program), D20 (the module makes the model of the run), D24
 (the learning in the module), D27 (no service), D44 (the bins in the
 module), `run_*` of D43.
 
-Only in B, proposed (`discussion.md`, "Variant B in full"):
+Only in B (`discussion.md`, "Variant B in full"). Since D87 the module of
+B reads its model only from the device tree, at the probe; the daemon
+learns, keeps the runs and writes a `.dts` (`gen-dts`); the user makes the
+overlay. No model goes from the daemon to the module.
 
 - QB1, decided (D78, with D70-D76). The module in B, in full (`discussion.md`, "QB1: the
   module of B in full"):
   - probe: the IIO channels (`-EPROBE_DEFER`); `battery@0`; the set up of
     the PMIC (D5, the writes of Rex); `ocv-capacity-table-0` or the curve
-    built in (D59); the power supply (`supplied_from = "axp20x-ac"`,
+    built in (D59); the model of the device tree (D75), checked as
+    `model_commit` checked it (D43, D51): a bad one is a line of `err` and the
+    voltage alone; the power supply (`supplied_from = "axp20x-ac"`, no
     `attr_grp`); the charger; the first run.
-  - each 1 s (D42): three reads of IIO; 0x01 on the charger under 100 mA
+  - each 10 s (D70): three reads of IIO; 0x01 on the charger under 100 mA
     (D40); under the mutex: `charge_counter` += I × dt; the level; the
     silence count (D41).
-  - the level, two ways by the model in use: with no model (`default`) by
-    the voltage alone on the curve (D58-D60), no count; with a model
-    (`loaded`) the count and C' (D23), the end by `V_thr` (D35), the start by
-    the voltage on the table of the model (D22).
+  - the level, one way for the life of the module, fixed at the probe
+    (D87): with no model in the device tree by the voltage alone on the
+    curve (D58-D60), no count; with a model in the device tree the count and
+    C' (D23), the end by `V_thr` (D35), the start by the voltage on the table
+    of the model (D22).
   - `status` (D40); `health`: `Good`, `Dead` at the silence.
-  - the attributes: `model_*` (the draft), `model_commit` (`1`, or
-    `default` to go back to the default, D53), `model_source`. Gone: `run_*`,
-    `learn_state`, `learn_charge`.
+  - no attributes of its own (D87): no `model_*`, `model_commit`,
+    `model_source`, `run_*`, `learn_*`. The mode is told once, in the line of
+    the probe.
   - the properties of the class (D43, D55) and `charge_counter` (D63).
   - suspend: the work cancelled; at resume the time set to now, the level
     by the voltage again; nothing of a learning to drop.
-  - dmesg: the lines of the module only (bound, no model, model taken or
-    refused, the start level, the full state, 0 % by the voltage, the AXP
-    silent, a read failed, suspend and resume, removed); the lines of the
-    learning are the daemon's, in the journal (D67).
-  - the parameters: `end_uv`, `r_uohm`, `full_margin_uv`, `full_current_ua`,
-    `silent_samples`, the five of C'. Gone: `r_step_min_ua` (R is learned by
-    the daemon).
-  - the memory: the model in use and the draft (2 × about 104 B), the
-    count, the sums of 30 s, the default curve (84 B, `const`): about
-    0.3 KiB. No bins (D44 is of A).
+  - dmesg: the lines of the module only (bound, with the mode: the model of
+    the device tree or the voltage alone; a model of the device tree
+    refused; the start level; the full state; 0 % by the voltage; the AXP
+    silent; the guard; a read failed; suspend and resume; removed). No lines
+    of a change of mode (D87). The lines of the learning are the daemon's,
+    in the journal (D67).
+  - the settings: properties of the device tree (D73).
+  - the memory: the model (about 104 B), the count, the sums of 30 s, the
+    default curve (84 B, `const`): about 0.2 KiB. No draft, no bins.
 - QB2, decided (D63, D70). The daemon reads each 10 s `charge_counter`,
   `voltage_now`, `current_now`, `status`, `health` of our battery: the
   copies of the last sample of the module, no read of the bus; the charge
@@ -75,15 +80,11 @@ Only in B, proposed (`discussion.md`, "Variant B in full"):
   V × I of its own samples. Not the drivers there are (IIO, `axp20x-ac`):
   that would read the bus twice and lose bit 6 of 0x01 (`discussion.md`,
   "The daemon with the least tie to the module").
-- QB3, decided (D65, D68): the daemon runs from the boot, a service of
-  systemd, enabled; no `Restart=`. Each 1 s it looks at
-  `/sys/class/power_supply/axp22x-soft-battery/` (proposed: by a read of
-  `model_source`): not there, it waits; there with `model_source` =
-  `default` while it has a model, it writes the model (`model_*`,
-  `model_commit`): at the first sight, and again after the module was
-  loaded again. No rule of udev for it. Proposed: a read each second, not
-  inotify (sysfs does not tell of new directories by inotify) and not the
-  netlink of uevents (a crate or code of sockets).
+- QB3, decided (D65, D68, D87): the daemon runs from the boot, a service
+  of systemd, enabled by a preset; no `Restart=`; no rule of udev; no
+  `Before=upower.service`, no `Type=notify` (D87: it gives the module
+  nothing). At each read (10 s) it looks for
+  `/sys/class/power_supply/axp22x-soft-battery/`: not there, it waits.
 - QB4. The learning in the daemon, proposed in full (`discussion.md`,
   "QB4: the learning of the daemon in full"). The daemon reads each 10 s
   (D70) `charge_counter`, `voltage_now`, `current_now`, `status`, `health`:
@@ -103,12 +104,12 @@ Only in B, proposed (`discussion.md`, "Variant B in full"):
     good reads before the first failed one (30 s, D35); the model of the run
     (D20, D22): `Q_full`, `E_full`, R, the table of 21 points by the means
     of 60 s about each 5 %; the check (D54); `runs/` or `invalid/` (D45);
-    the mean model (D29, D48); the model as a piece of the device tree in
-    the journal (D75); `systemctl poweroff --force` (D49);
+    `systemctl poweroff --force` (D49). No mean here: `gen-dts` makes it
+    (D81);
   - the module gone in a run (the directory of our battery not there, or
     `charge_counter` smaller than at the start by more than the run could
     give): the run is dropped, a line in the journal; the daemon waits for
-    the module and gives it the model when it comes (D68);
+    the module;
   - a suspend: the run dropped, the daemon exits (D66, D69); a stop of the
     daemon: the run lost (in memory, D16).
   - the temperature of the PMIC (D85): once a minute from
@@ -368,14 +369,13 @@ sample) are in `discussion.md`, "dmesg, the list after D33-D36". The
 prefix is `axp22x_soft_battery axp20x-battery-power-supply:`. A cycle
 gives about six lines.
 
-The mode of the level (D76), a line of `info` at the probe and at each
-change, then `power_supply_changed()` (the level is worked out again):
+The mode of the level (D76, D87): in B told once, in the line of the
+probe; no lines of a change (the mode does not change in the life of the
+module):
 
 ```
-mode: by voltage: no model (no ocv-capacity-table-0, no charge-full in the device tree); the curve built in, R 87 mOhm
-mode: by model: dt, 9067 mAh, 33.3 Wh, R 78 mOhm, end 3211 mV, 21 points
-mode: by model: loaded, 8542 mAh, 31.2 Wh, R 78 mOhm, end 3211 mV, 21 points
-mode: by voltage: default asked by model_commit
+bound: charge current 2100 mA, V_OFF 2900 mV, full at 4200 mV; mode: by voltage, no model in the device tree (no ocv-capacity-table-0, no charge-full); the curve built in, R 87 mOhm
+bound: charge current 2100 mA, V_OFF 2900 mV, full at 4200 mV; mode: by model of the device tree, 9067 mAh, 33.3 Wh, R 78 mOhm, end 3211 mV, 21 points
 ```
 
 ### User space
@@ -411,7 +411,8 @@ mode: by voltage: default asked by model_commit
 - The files (D45-D48): `runs/` (the last 5: the mean and the highest
   `V_end`), `archive/` (set aside by age by `load`, or by `reset`),
   `invalid/` (failed the check).
-- The check of a run before `runs/` (D54): the checks of `model_commit`
+- The check of a run before `runs/` (D54): the checks of a model (in B the
+  module makes them on the model of the device tree, D87), as of `model_commit`
   (D43, D51).
 - `seq` (D52); `load --apply` (D53).
 - The crates (D50, D54): `lexopt` only; errors by
@@ -515,10 +516,10 @@ not the curve.
     `energy_full` / `energy_full_design`); the end: `end-microvolt` (D73);
   - a model of the device tree = the table and the two capacities there;
     with any of them missing, the voltage alone (D58) on what there is;
-  - `model_source`: `default`, `dt` (a model of the device tree), `loaded`
-    (written); `model_commit` = `default` goes back to `dt` if there is one;
-  - after a run the daemon (or `save` of A) writes the model to its log as a
-    piece of the device tree, to be copied into an overlay by hand.
+  - `model_source` and `model_commit`: of A only; in B the module has no
+    attributes (D87);
+  - in B the piece of the device tree is made by `gen-dts` (D81), not
+    written to the journal after a run (D87).
 - Q13, decided (D77, D81, D82). The modes of the program of B:
   - `axp22x-soft-battery daemon`: the service of D68 runs it;
   - `axp22x-soft-battery gen-dts`: makes the mean model of `runs/` (as the
@@ -531,14 +532,10 @@ not the curve.
   - `axp22x-soft-battery reset`: moves `runs/` to `archive/` (D47);
   - the full paths of `battery@0` and of `battery-power-supply` in the live
     tree are to be read once on the device (`/proc/device-tree`).
-- The package of the daemon (D79): the unit `axp22x-soft-battery.service`,
-  `ExecStart=/usr/bin/axp22x-soft-battery daemon`, `Before=upower.service`,
-  `WantedBy=multi-user.target`, a preset `enable`; no rule of udev.
-  `Type=notify` (D83), `READY=1` once the model is in the module (or
-  at once when there is no model or no module yet): `Before=` alone orders
-  the start, not the write of the model; with `notify` upower starts after
-  the write. `READY=1` is one datagram to `$NOTIFY_SOCKET`
-  (`std::os::unix::net::UnixDatagram`), no crate.
+- The package of the daemon (D79, D87): the unit `axp22x-soft-battery.service`,
+  `ExecStart=/usr/bin/axp22x-soft-battery daemon`, `WantedBy=multi-user.target`,
+  a preset `enable`; no rule of udev; no `Before=upower.service`, no
+  `Type=notify`.
 
 ## Fixed on the review
 
