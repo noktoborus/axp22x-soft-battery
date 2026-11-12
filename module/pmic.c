@@ -19,7 +19,10 @@
 #define SB_CHRG_VOLT_SHIFT	5
 #define SB_CHRG_CURR_MASK	GENMASK(3, 0)
 
-/* V_OFF: 2.6 V + n * 0.1 V. */
+/*
+ * V_OFF in 0x31 [2:0]: 000 is 2.6 V, each step 0.1 V, 111 is 3.3 V (the
+ * datasheet of the AXP228 V1.1, REG 31H; axp20x_battery.c reads it so).
+ */
 static unsigned int sb_v_off_code(int uv)
 {
 	return (uv - 2600000) / 100000;
