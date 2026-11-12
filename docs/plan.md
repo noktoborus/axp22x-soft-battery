@@ -237,7 +237,11 @@ Two packages (D6, D25).
   the boot; a section in the included file. Else: a USE flag of
   `uconsole-pi-firmware`.
 - How the ebuilds in repo-uconsole take the source of this repository
-  (`package.self` of `uconsole/linux/AGENTS.md`).
+  (`package.self` of `uconsole/linux/AGENTS.md`). Worked out in
+  `discussion.md`, "The source of the ebuilds". Proposed: a script of this
+  repository copies the source into `files/` of each package and writes
+  its sum into the ebuild, as `kernel/bump.sh --sum` does for the kernel;
+  a tarball of a tag (SRC_URI) once the repository is published.
 - The capacity depends on the load (9067 mAh at 1.6 A): keep the last run,
   or a mean of some runs; and who makes the mean.
 - The values of the model: the step of the current for `R` (200 mA), the
