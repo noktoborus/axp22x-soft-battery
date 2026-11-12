@@ -39,7 +39,7 @@ Not decided where it says "proposed".
   `V_OFF` is lost; it is a failed learning (D17).
 - At the silence of the AXP the module sends one uevent `change` (D19):
   `UCONSOLE_BATTERY_EVENT=axp_silent`, and with a learning done also the
-  model in the same keys as `model.env` (below). With no learning the
+  model in the same keys as the files of runs (below). With no learning the
   module does nothing more (D18). It knows nothing of upower and of who
   powers off (D11, D12, D18).
 - While the learning runs, all its data is in the memory of the module
@@ -183,19 +183,11 @@ its values; they are not in dmesg.
 - `load` (D30):
   1. lists `runs/` and takes the last N valid runs by `seq`, by the names
      only (`*.invalid.env` are not taken);
-  2. makes the mark of the source: for each run taken, its name, size and
-     time of change in ns (`stat`, no read), and the options (N);
-  3. the mark is the same as the line `SOURCE=` of `model.env`: prints
-     `model.env`, reads no run;
-  4. else: reads the runs, makes the mean, writes `model.env` with the
-     new `SOURCE=` (a file beside it, `fsync`, `rename`), prints it;
-  5. no valid run: deletes `model.env`, prints nothing; the module keeps
-     the default model.
-  - The mark is compared for equality, not by the order of times: with
-    no RTC battery the clock may go back, and a new run may get a time
-    older than `model.env`. A changed size or time or name, a run added or
-    deleted, a changed option: each gives another mark.
-  - `model.env` is a cache: it can be deleted at any time.
+  2. reads them, makes the mean and prints it; each boot, no cache
+     (D31);
+  3. no valid run: prints nothing; the module keeps the default model.
+  - A run added or deleted is seen at the next boot by itself: the list
+    of `runs/` is read each time.
 - The files are read at the event: `/var` is to be mounted then; one root
   partition gives that.
 
@@ -265,12 +257,11 @@ sum is old. The version stays until a first release. A tarball of a tag
   model". Proposed:
   - all runs kept, `runs/<seq>.env`; `seq` a number the program counts up;
     the date is a key inside, not the order (the clock may be wrong);
-  - the mean of the last 5 valid runs; N an option of the program. The
-    age of 60 days is dropped: at boot the clock may be wrong, and the
-    mark of the source would not see the days go by;
+  - the mean of the last 5 valid runs; N an option of the program. No
+    age limit: at boot the clock may be wrong;
   - a plain mean: each value; each point of the table (one per 5 % of
     the run's own `Q_full`) as a pair (V, I); `V_end`, `I_end` as a pair;
-  - `reset` moves `runs/` to `runs.<seq>/` and deletes `model.env`;
+  - `reset` moves `runs/` to `runs.<seq>/`;
   - `load` by hand writes the attributes `model_*` at once, after a
     change of the options or of `runs/`.
 - The values of the model: the step of the current for `R` (200 mA), the
