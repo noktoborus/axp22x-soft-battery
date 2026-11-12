@@ -154,33 +154,49 @@ its values; they are not in dmesg.
   writable and executable (`MemoryDenyWriteExecute`).
 - The program takes two events (D19):
   - the AXP silent: a forced power off;
-  - the AXP silent and a model: it keeps the run in
-    `/var/lib/uconsole-soft-battery/runs/<date>.env`, makes the mean
-    model of the runs (D29) and writes it into the state file
-    `/var/lib/uconsole-soft-battery/model.env`, in the keys of the
-    attributes `model_*`; `fsync` of both files and of their directories,
-    then a forced power off.
+  - the AXP silent and a model: it checks the run (proposed: `Q_full`
+    in 30..200 % of the design, V of the table falls with the charge
+    out), keeps it as `/var/lib/uconsole-soft-battery/runs/<seq>.env`,
+    or `<seq>.invalid.env` with a line into `/dev/kmsg`; `fsync` of the
+    file and of `runs/`; then a forced power off. No mean here (D30).
 - It runs only at that event: no daemon, no write to the disk during the
   learning (D16, D20).
 - Proposed: the forced power off is `systemctl poweroff --force`: no stop
   of the services; systemd kills the processes and unmounts the file
   systems.
 - The model reaches the module at boot by a rule of udev (D13), on the
-  event `add` of the power supply:
+  event `add` of the power supply; the program makes the mean there
+  (D30):
   ```
   ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="uconsole-soft-battery", \
-    IMPORT{file}="/var/lib/uconsole-soft-battery/model.env", \
-    ATTR{model_q_full}="$env{Q_FULL}", ATTR{model_ocv}="$env{OCV}", ...
+    IMPORT{program}="/usr/bin/uconsole-soft-battery load", \
+    ATTR{model_q_full}="$env{Q_FULL}", ATTR{model_table}="$env{TABLE}", ...
   ```
-  `IMPORT{file}` reads lines `KEY=value`; `ATTR{}` writes them into the
-  attributes of the device. The module adds its attributes to the power
-  supply by `attr_grp` of `power_supply_config`. The program of the save
-  writes `model.env`. It works for `=m` and `=y`: for a module built in
-  the event comes before udev, and the coldplug of
+  `IMPORT{program}` takes the lines `KEY=value` the program prints;
+  `ATTR{}` writes them into the attributes of the device. The module adds
+  its attributes to the power supply by `attr_grp` of
+  `power_supply_config`. It works for `=m` and `=y`: for a module built
+  in the event comes before udev, and the coldplug of
   `systemd-udev-trigger` gives it again. Until the write the module goes
   by the default model (some seconds with `=y`). A new model makes the
   module work out the start level by the voltage again.
-- The file is read at the event: `/var` is to be mounted then; one root
+- `load` (D30):
+  1. lists `runs/` and takes the last N valid runs by `seq`, by the names
+     only (`*.invalid.env` are not taken);
+  2. makes the mark of the source: for each run taken, its name, size and
+     time of change in ns (`stat`, no read), and the options (N);
+  3. the mark is the same as the line `SOURCE=` of `model.env`: prints
+     `model.env`, reads no run;
+  4. else: reads the runs, makes the mean, writes `model.env` with the
+     new `SOURCE=` (a file beside it, `fsync`, `rename`), prints it;
+  5. no valid run: deletes `model.env`, prints nothing; the module keeps
+     the default model.
+  - The mark is compared for equality, not by the order of times: with
+    no RTC battery the clock may go back, and a new run may get a time
+    older than `model.env`. A changed size or time or name, a run added or
+    deleted, a changed option: each gives another mark.
+  - `model.env` is a cache: it can be deleted at any time.
+- The files are read at the event: `/var` is to be mounted then; one root
   partition gives that.
 
 ### The packages
@@ -245,22 +261,18 @@ sum is old. The version stays until a first release. A tarball of a tag
   off. To check on the device: a missing file of `include` does not stop
   the boot; a section in the included file. Else: a USE flag of
   `uconsole-pi-firmware`.
-- The mean model (D29). Worked out in `discussion.md`, "The mean
+- The mean model (D29, D30). Worked out in `discussion.md`, "The mean
   model". Proposed:
-  - all runs kept, `runs/<seq>-<date>.env`, ordered by the number `seq`,
-    not by the date (the clock may be wrong at boot);
-  - the mean of the last 5 runs that are no older than 60 days; the last
-    run always counts; N and the age are options of the program;
+  - all runs kept, `runs/<seq>.env`; `seq` a number the program counts up;
+    the date is a key inside, not the order (the clock may be wrong);
+  - the mean of the last 5 valid runs; N an option of the program. The
+    age of 60 days is dropped: at boot the clock may be wrong, and the
+    mark of the source would not see the days go by;
   - a plain mean: each value; each point of the table (one per 5 % of
-    the run's own `Q_full`) as a pair (V, I);
-  - a run that is not sane is kept with a mark and does not count:
-    `Q_full` under 30 % or over 200 % of the design, a table where V
-    rises with the charge out; a line into `/dev/kmsg` says so;
-  - `reset` moves `runs/` to `runs.<date>/` and deletes `model.env`;
-  - when: at the silence, after the run is kept, before the power off;
-    and by hand, `uconsole-soft-battery rebuild`, after a change of the
-    options or of `runs/`: it writes `model.env` and the attributes
-    `model_*` of now (`discussion.md`, "When the mean is made").
+    the run's own `Q_full`) as a pair (V, I); `V_end`, `I_end` as a pair;
+  - `reset` moves `runs/` to `runs.<seq>/` and deletes `model.env`;
+  - `load` by hand writes the attributes `model_*` at once, after a
+    change of the options or of `runs/`.
 - The values of the model: the step of the current for `R` (200 mA), the
   21 points of the table.
 - Which register of the AXP228 marks the end of the charge.
