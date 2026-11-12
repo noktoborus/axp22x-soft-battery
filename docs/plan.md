@@ -218,15 +218,22 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
   bounds of the ADC; a stop of the daemon (SIGTERM: a power off by upower
   or by hand): "the run was broken off".
 - At each exit, for any cause, the daemon prints to the journal the data
-  it gathered: the run so far, cut short or whole (D97, D98).
+  it gathered: the run so far, cut short or whole (D97, D98). A run cut
+  short is kept in `partial/` (D99): `REASON=` (the cause), `STOP_LEVEL=`
+  (the level by the curve at the stop), `Q_full` and `E_full` = the charge
+  and the energy out / (1 − `STOP_LEVEL`), R and the table as far as it
+  went (the points under the stop from the curve in use), no `V_end`.
 - The settings of upower are left alone (D97).
 
 ### `axp22x-soft-battery gen-dts`
 
-The model of `runs/` as it would be for the module (D81): the mean of the
+The model of `runs/` as it would be for the module (D81); with
+`--use-partial` the runs of `partial/` stopped at 10 % or under go into the
+means too, the others are skipped with a line (D99): the mean of the
 runs (each value, each point of the tables), `end-microvolt` = the highest
 `V_end` + 50 mV (D35, D48), `ocv-capacity-celsius` = the mean temperature
-(D86); an overlay `.dts` with `target-path` to `battery@0` and to the cell
+(D86); `end-microvolt` only of `runs/`, none written if `runs/` is empty
+(3.2 V of D21 holds); an overlay `.dts` with `target-path` to `battery@0` and to the cell
 (D82), to stdout. The user compiles it (`dtc -@ -I dts -O dtb`) and puts
 it into `config.txt` by hand (D32, D87).
 
@@ -239,9 +246,9 @@ learning.
 
 ### The files
 
-`/var/lib/axp22x-soft-battery/`: `runs/` (the last 5 valid runs),
-`archive/` (the valid runs past 5), `invalid/` (those that failed the
-check) (D45-D48, D90). A file: lines `KEY=value`, `seq` of 6 digits (D52).
+`/var/lib/axp22x-soft-battery/`: `runs/` (the last 5 valid runs, to the
+silence), `archive/` (the valid runs past 5), `invalid/` (those that failed
+the check), `partial/` (the runs cut short, D99) (D45-D48, D90, D99). A file: lines `KEY=value`, `seq` of 6 digits (D52).
 
 ## The packages
 
@@ -287,17 +294,8 @@ user.
 - How a run of a charge is kept: a file of its own in `runs/`, or a part of
   the run of the discharge that follows.
 - With the defaults of upower (the critical action at 2 %), a run is broken
-  off before the silence (D97): whole runs then come only if the user sets
-  upower so, or by `import`.
-- Q16. The use of a run broken off low (`discussion.md`, "A run broken
-  off"), proposed: a run stopped by SIGTERM when the level by the curve is
-  10 % or less is kept in `runs/` with `PARTIAL=1`: R and the curve as far as
-  it went are its own; `Q_full`, `E_full` = the charge and the energy out /
-  (1 − the level at the stop); the points of the table under the stop from
-  the curve in use; no `V_end`. `gen-dts` takes it into the means, but
-  `end-microvolt` only of the whole runs (to the silence); with none, it
-  writes no `end-microvolt` (3.2 V of D21 holds). A run stopped higher is
-  printed (D98), not kept.
+  off before the silence (D97): it goes to `partial/` (D99); whole runs,
+  and so `V_end`, come only if the user sets upower so, or by `import`.
 
 ## Variant A, kept apart
 
