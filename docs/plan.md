@@ -189,7 +189,7 @@ curve stays in the module; user space does not read it.
 ### Messages of dmesg
 
 Required: the module loaded, the model awaited, the learning started,
-the learning done (D15). Proposed: the whole list. Each is one line, at
+the learning done (D15); the whole list below is D15 too. Each is one line, at
 an event, never in a loop. `dev_*` of the device `uconsole-soft-battery`.
 
 A line of the learning is written at a change of state, not at each

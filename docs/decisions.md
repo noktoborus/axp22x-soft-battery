@@ -19,7 +19,7 @@ not answered yet is in `plan.md`, "Open questions".
 | D12 | 2026-11-12 | user | No more logic and no workarounds in the kernel module. A guard against a failure of user space, when it is needed, is a separate module. |
 | D13 | 2026-11-12 | user | The model reaches the module at boot by a rule of udev on the event `add` of its power supply; `ATTR{}` writes it into the attributes of the module. Not modprobe.d: it gives no options to a module built in. Changed by D30: the rule takes the model from the program (`IMPORT{program}`), not from a file (`IMPORT{file}`). |
 | D14 | 2026-11-12 | user | The learning starts each time a charge ends in full; no start by hand. |
-| D15 | 2026-11-12 | user | The module tells its events in dmesg: it is loaded, the model is awaited, the learning started, the learning done, and others (the list in `plan.md`). |
+| D15 | 2026-11-12 | user | The module tells its events in dmesg: it is loaded, the model is awaited, the learning started, the learning done, and others (the list in `plan.md`). Taken as decided on 2026-11-12 with the list of `plan.md` after D33-D36 and its rule: a line at a change of state, not at each sample. |
 | D16 | 2026-11-12 | user | While the learning runs, it is kept in the memory of the module only; the memory is to be small. At its end a uevent makes user space write the state file. |
 | D17 | 2026-11-12 | user | A learning broken by a cut by `V_OFF` or a reboot is a failed learning and is dropped. The next full charge starts a new one. Replaces D9. |
 | D18 | 2026-11-12 | user | upower stays. The module knows nothing of upower, nor when and by whom the system is powered off. When the module finds the AXP silent, a learning that runs ends; else the module does nothing more. |
