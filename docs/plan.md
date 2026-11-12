@@ -537,6 +537,13 @@ not the curve.
   a preset `enable`; no rule of udev; no `Before=upower.service`, no
   `Type=notify`.
 
+- Proposed on the review of 2026-11-12 (`discussion.md`, "What to make
+  simpler"): (1) the level always by the voltage (no count in the module,
+  no C', no five settings of C'); `charge_counter` out of the module, the
+  daemon counts (D89); (2) a run kept as a table of OCV; (3) a mode
+  `import` of the program for the logs of axp-log; (4) the daemon moves the
+  oldest run to `archive/`; `reset` may go.
+
 ## Fixed on the review
 
 What did not agree, 2026-11-12, and how it stands now:
