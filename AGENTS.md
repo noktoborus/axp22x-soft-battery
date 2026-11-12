@@ -25,6 +25,12 @@ THEN a fact from there is cited by its path, not copied here
 RULE state : no code yet; the design is in work
 REF  docs/plan.md
 
+## Layout
+
+RULE layout.tools = tools/, scripts that read logs of the device for the
+     design; each listed in README.md, "Tools"
+RULE layout.docs = docs/, the documents (below)
+
 ## Documents
 
 RULE docs.decisions = docs/decisions.md, what is decided: one entry per

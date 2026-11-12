@@ -128,8 +128,8 @@ its values; they are not in dmesg.
   difference of the currents, not by the whole current. Nothing of the
   charge is saved over a boot (D16).
 - The voltage corrects the count (D23): on a discharge the level falls
-  at the speed of the count times f = (left by the voltage) / (left by
-  the count), f in 0.5..2; it never rises on a discharge. The voltage
+  at the speed of the count times f = (the level shown) / (left by the
+  voltage), f in 0.5..2; it never rises on a discharge. The voltage
   weighs nothing above 30 % and in full at 10 %; V and I are means over
   30 s. On the charger the count only; the end of the charge sets 100 %.
 - The error of the voltage, from the table of `discharge-cm5.md`: the
@@ -247,8 +247,6 @@ sum is old. The version stays until a first release. A tarball of a tag
 
 ## Open questions
 
-- The values of C' (D23): 30 s, f in 0.5..2, 30 %, 10 %; to check by
-  the level at the silence, in dmesg.
 - The mean model (D29, D30). Worked out in `discussion.md`, "The mean
   model". Proposed:
   - all runs kept, `runs/<seq>.env`; `seq` a number the program counts up;
@@ -260,6 +258,16 @@ sum is old. The version stays until a first release. A tarball of a tag
   - `reset` moves `runs/` to `runs.<seq>/`;
   - `load` by hand writes the attributes `model_*` at once, after a
     change of the options or of `runs/`.
-- The values of the model: the step of the current for `R` (200 mA), the
-  21 points of the table.
+- The values of the model and of C'. Worked out in `discussion.md`,
+  "The values, from two logs". Proposed:
+  - R: the median of dV/dI over steps of 1 s of 30 mA or more, kept as a
+    histogram of 5 mOhm bins (40 × u16); fewer than 10 steps in a run: no
+    R learned, the R of the model in use stays; the default R is a
+    property of the node of the module, beside the end of D21:
+    `uconsole,resistance-micro-ohms = <87000>`;
+  - the table: 41 points, one each 2.5 %, in place of 21 (D22): 21
+    points miss the curve by up to 1.7 %, 41 by 0.5 %;
+  - C': the means of V and I over 30 s, as D23; the weight of the voltage
+    from 50 % (0) to 20 % (full), in place of 30 % and 10 %; f in 0.5..2,
+    as D23.
 - Which register of the AXP228 marks the end of the charge.

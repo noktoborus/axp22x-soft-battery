@@ -23,3 +23,10 @@ State: the design is in work; no code yet.
   remove), repo-uconsole, `notes/custom-battery.md`.
 - `uconsole/hardware`: `notes/battery-gauge.md`,
   `notes/discharge-cm5.md`, `tools/axp-log`.
+
+## Tools
+
+| file | what |
+|---|---|
+| `tools/log-r-noise-slope.py` | from a log of `hardware/tools/axp-log`: R by steps of the current, the noise of the voltage by the window of the mean, the slope of the curve, the end |
+| `tools/log-r-table.py` | from such a log: R by the size of the step, the error of a table of 11, 21, 41 points |
