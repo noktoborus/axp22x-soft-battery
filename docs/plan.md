@@ -174,14 +174,25 @@ its values; they are not in dmesg.
 - The file is read at the event: `/var` is to be mounted then; one root
   partition gives that.
 
-### The package
+### The packages
 
-- Proposed: `sys-power/uconsole-battery` in repo-uconsole;
+Two packages (D6, D25).
+
+- The module, proposed: `sys-power/uconsole-battery` in repo-uconsole;
   `linux-mod-r1`, depends on `virtual/dist-kernel`; the overlay
   `uconsole-battery.dtbo` by `dtc -@` into `/boot/overlays`.
 - The overlay: `target-path` to the node `battery-power-supply`,
   `status = "disabled"`; a node `compatible = "uconsole,battery"` at the
   root, so that udev loads the module by its alias.
+- The program (D25), in Rust, proposed: `sys-power/uconsole-battery-save`,
+  by the eclass `cargo`. It holds all of user space: the program, the
+  rule of udev of the silence, the rule of udev of the model at boot
+  (D13), the service. It depends on the package of the module.
+- Proposed: the program takes no crate, only `std`: it reads sysfs,
+  writes a file, syncs, runs `systemctl`. Then the ebuild has no list of
+  crates to fetch (`CRATES`) and no tarball of vendored crates.
+- To check: the cross build of Rust for aarch64 in unidev (`cargo`
+  eclass, the target of rust).
 
 ## Steps
 
@@ -197,8 +208,8 @@ its values; they are not in dmesg.
    (does it find `/usr/src/linux` of ROOT), the overlay.
 4. The module: the set up of the PMIC, the count, the power supply, the
    learning.
-5. User space: the program that makes the model, the rules of udev, the
-   service.
+5. User space, the package of the program (Rust): the program, the
+   rules of udev, the service.
 6. The kernel series: 0010 out, `bump.sh --sum`.
 7. A test: a full charge, a discharge to the silence of the AXP, the save,
    the power off, the model at the next boot.
@@ -207,11 +218,11 @@ its values; they are not in dmesg.
 
 - The values of C' (D23): 30 s, f in 0.5..2, 30 %, 10 %; to check by
   the level at the silence, in dmesg.
-- The program of user space: in the package of the module or in its own.
 - The line `dtoverlay=uconsole-battery` of `config.txt`: by
   `uconsole-pi-firmware` (a USE flag), or by hand.
-- How the ebuild in repo-uconsole takes the source of this repository
+- How the ebuilds in repo-uconsole take the source of this repository
   (`package.self` of `uconsole/linux/AGENTS.md`).
+- The names of the two packages.
 - The capacity depends on the load (9067 mAh at 1.6 A): keep the last run,
   or a mean of some runs; and who makes the mean.
 - The values of the model: the step of the current for `R` (200 mA), the
