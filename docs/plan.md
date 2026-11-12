@@ -203,8 +203,8 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
     the last 3 good reads; the model of the run: `Q_full`, `E_full`, R,
     `V_end`, `I_end`, the table of 21 points as OCV (V + I × R, the means of
     60 s at each 5 %) (D90), the temperature (D85); the check (D54, D51);
-    the file `runs/<seq>.env` or `invalid/<seq>.env` (D45, D52), `fsync`;
-    the oldest past 5 in `runs/` to `archive/` (D90); `systemctl poweroff
+    the file `discharge/full/<seq>.env` or `discharge/invalid/<seq>.env` (D45, D52, D100), `fsync`;
+    the oldest past 5 in `discharge/full/` to `discharge/archive/` (D90, D100); `systemctl poweroff
     --force` (D49).
 - A run of a charge (D91): from the charger in to `Full`, the device on;
   each read kept (the charge in, V, I); at `Full` each point gets its
@@ -219,7 +219,7 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
   or by hand): "the run was broken off".
 - At each exit, for any cause, the daemon prints to the journal the data
   it gathered: the run so far, cut short or whole (D97, D98). A run cut
-  short is kept in `partial/` (D99): `REASON=` (the cause), `STOP_LEVEL=`
+  short is kept in `discharge/partial/` (D99, D100): `REASON=` (the cause), `STOP_LEVEL=`
   (the level by the curve at the stop), `Q_full` and `E_full` = the charge
   and the energy out / (1 − `STOP_LEVEL`), R and the table as far as it
   went (the points under the stop from the curve in use), no `V_end`.
@@ -227,12 +227,12 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
 
 ### `axp22x-soft-battery gen-dts`
 
-The model of `runs/` as it would be for the module (D81); with
-`--use-partial` the runs of `partial/` stopped at 10 % or under go into the
+The model of `discharge/full/` as it would be for the module (D81); with
+`--use-partial` the runs of `discharge/partial/` stopped at 10 % or under go into the
 means too, the others are skipped with a line (D99): the mean of the
 runs (each value, each point of the tables), `end-microvolt` = the highest
 `V_end` + 50 mV (D35, D48), `ocv-capacity-celsius` = the mean temperature
-(D86); `end-microvolt` only of `runs/`, none written if `runs/` is empty
+(D86); `end-microvolt` only of `discharge/full/`, none written if it is empty
 (3.2 V of D21 holds); an overlay `.dts` with `target-path` to `battery@0` and to the cell
 (D82), to stdout. The user compiles it (`dtc -@ -I dts -O dtb`) and puts
 it into `config.txt` by hand (D32, D87).
@@ -240,15 +240,23 @@ it into `config.txt` by hand (D32, D87).
 ### `axp22x-soft-battery import <log>`
 
 A log of axp-log, from the full state to the silence, into a run of
-`runs/` (D90). The three logs of `uconsole/hardware/tools/axp-log/dump/`
+`discharge/full/` (D90, D100). The three logs of `uconsole/hardware/tools/axp-log/dump/`
 give a model of the device tree at once, and serve as tests of the
 learning.
 
 ### The files
 
-`/var/lib/axp22x-soft-battery/`: `runs/` (the last 5 valid runs, to the
-silence), `archive/` (the valid runs past 5), `invalid/` (those that failed
-the check), `partial/` (the runs cut short, D99) (D45-D48, D90, D99). A file: lines `KEY=value`, `seq` of 6 digits (D52).
+```
+/var/lib/axp22x-soft-battery/
+├── discharge/
+│   ├── full/      the last 5 valid runs to the silence (the mean, the highest V_end)
+│   ├── archive/   the valid runs to the silence past 5
+│   ├── invalid/   the runs that failed the check
+│   └── partial/   the runs cut short before the silence (D99)
+└── charge/        the runs of a charge (Q17)
+```
+
+(D45-D48, D90, D99, D100.) A file: lines `KEY=value`, `seq` of 6 digits (D52).
 
 ## The packages
 
@@ -291,10 +299,16 @@ user.
 
 ## Open questions
 
-- How a run of a charge is kept: a file of its own in `runs/`, or a part of
-  the run of the discharge that follows.
+- Q17. The runs of a charge under `charge/` (D100), proposed: a run of a
+  charge has no known start, but its end is known: `Full` is 100 %, and
+  each point gets its percent back from there (D91). So a charge that
+  reached `Full` is whole for the curve of the charge: `charge/full/`, the
+  last 5 for the mean, `charge/archive/` past them, `charge/invalid/` for one
+  that failed a check (the current of the charge falls along the phase of
+  constant voltage). A charge cut before `Full` has no point of 100 %: no
+  percent at all; printed (D98), not kept.
 - With the defaults of upower (the critical action at 2 %), a run is broken
-  off before the silence (D97): it goes to `partial/` (D99); whole runs,
+  off before the silence (D97): it goes to `discharge/partial/` (D99); whole runs,
   and so `V_end`, come only if the user sets upower so, or by `import`.
 
 ## Variant A, kept apart
