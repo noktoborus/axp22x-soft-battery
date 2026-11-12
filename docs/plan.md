@@ -35,12 +35,35 @@ starts the program), D20 (the module makes the model of the run), D24
 (the learning in the module), D27 (no service), D44 (the bins in the
 module), `run_*` of D43.
 
-Only in B, not decided yet: the daemon as a service (`Restart=always`); the
-learning, the bins and R at the start in the daemon; the model written by
-the daemon (`model_*`, `model_commit`) with no rule of udev; the silence
-seen by the daemon (the reads of sysfs fail, `health` = `Dead`); the
-module without the learning (`discussion.md`, "A daemon that does the
-work", "B: what the module holds").
+Only in B, proposed (`discussion.md`, "Variant B in full"):
+
+- QB1. The module in B: the set up of the PMIC; the reads of IIO each 1 s;
+  `status` (D40); the count of the charge; the level (D23, D35, D58-D60) by
+  the model in use; the model (`model_*`, `model_commit`, `model_source`,
+  D43); `health` = `Dead` at the silence; suspend: the level by the voltage
+  at resume. Out: the bins, R at the start, `run_*`, `learn_*`, the uevent
+  of a run. New: `charge_counter` of the class, the net charge counted by
+  the module since the probe, µAh, read only.
+- QB2. The daemon reads each 1 s `charge_counter`, `voltage_now`,
+  `current_now`, `status`, `health` of our battery. These are the copies of
+  the last sample of the module: no read of the bus. The charge of the
+  learning is the difference of `charge_counter`, so the daemon misses no
+  charge when its second and the second of the module are not in step;
+  the energy by V × I of its own samples.
+- QB3. Start: a rule of udev on `add` of our battery, `TAG+="systemd"`,
+  `ENV{SYSTEMD_WANTS}="uconsole-soft-battery.service"`; the service
+  `Restart=always`. At its start the daemon writes the mean model
+  (`model_*`, `model_commit`); no `IMPORT{program}`.
+- QB4. The learning in the daemon: the start at `status` from `Full` to
+  `Discharging`; R by the step at the start (D34); the curve at full
+  resolution in its memory (no bins); the end at `health` = `Dead` or the
+  reads failing; then the run kept, the mean made, `systemctl poweroff
+  --force` (D49). Kept in memory only, as D16; a restart of the daemon
+  drops a learning (a line in its log).
+- QB5. Suspend in the daemon: `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC` grows
+  by the time of a sleep; a growth drops the learning (D33).
+- QB6. The log of the daemon: its stdout and stderr into the journal of
+  systemd (a service); D27 said `/dev/kmsg` for a program of `RUN`.
 
 ## The design
 
