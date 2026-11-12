@@ -183,7 +183,14 @@ its values; they are not in dmesg.
 
 ### The packages
 
-Two packages (D6, D25).
+Two packages (D6, D25). Their source is a copy in `files/` of each (D28):
+a script of this repository (`make export`, say) copies the module
+(`src/`, `Kbuild`, the overlay, the `include` file) into
+`sys-power/uconsole-soft-battery/files/`, and the program (the crate, the
+rules of udev) into `sys-power/uconsole-soft-battery-tools/files/`, and
+writes the sum of `files/` into each ebuild. Its `--check` fails when the
+sum is old. The version stays until a first release. A tarball of a tag
+(`SRC_URI`) when this repository is published.
 
 - The module: `sys-power/uconsole-soft-battery` (D26) in repo-uconsole;
   `linux-mod-r1`, depends on `virtual/dist-kernel`; the overlay
@@ -213,7 +220,7 @@ Two packages (D6, D25).
      the datasheet.
 2. The scheme of the states and threads: a `.scheme` on a desk of
    showcase.
-3. The package: the ebuild, `linux-mod-r1` in the cross build of unidev
+3. The packages: the script of the copy into `files/` (D28), the ebuilds, `linux-mod-r1` in the cross build of unidev
    (does it find `/usr/src/linux` of ROOT), the overlay.
 4. The module: the set up of the PMIC, the count, the power supply, the
    learning.
@@ -236,12 +243,6 @@ Two packages (D6, D25).
   off. To check on the device: a missing file of `include` does not stop
   the boot; a section in the included file. Else: a USE flag of
   `uconsole-pi-firmware`.
-- How the ebuilds in repo-uconsole take the source of this repository
-  (`package.self` of `uconsole/linux/AGENTS.md`). Worked out in
-  `discussion.md`, "The source of the ebuilds". Proposed: a script of this
-  repository copies the source into `files/` of each package and writes
-  its sum into the ebuild, as `kernel/bump.sh --sum` does for the kernel;
-  a tarball of a tag (SRC_URI) once the repository is published.
 - The capacity depends on the load (9067 mAh at 1.6 A): keep the last run,
   or a mean of some runs; and who makes the mean.
 - The values of the model: the step of the current for `R` (200 mA), the
