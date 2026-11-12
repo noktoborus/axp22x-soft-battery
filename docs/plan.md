@@ -507,7 +507,7 @@ not the curve.
 - The package of the daemon (D79): the unit `axp22x-soft-battery.service`,
   `ExecStart=/usr/bin/axp22x-soft-battery daemon`, `Before=upower.service`,
   `WantedBy=multi-user.target`, a preset `enable`; no rule of udev.
-  Proposed: `Type=notify`, `READY=1` once the model is in the module (or
+  `Type=notify` (D83), `READY=1` once the model is in the module (or
   at once when there is no model or no module yet): `Before=` alone orders
   the start, not the write of the model; with `notify` upower starts after
   the write. `READY=1` is one datagram to `$NOTIFY_SOCKET`
