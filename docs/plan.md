@@ -88,6 +88,12 @@ Required: the module loaded, the model awaited, the learning started,
 the learning done (D15). Proposed: the whole list. Each is one line, at
 an event, never in a loop. `dev_*` of the device `uconsole-soft-battery`.
 
+A line of the learning is written at a change of state, not at each
+sample: the module starts the learning again at each sample of the full
+state (the marker), silently. So a cycle gives about four lines: full,
+started, done or dropped, silent. (`discussion.md`, "dmesg and the full
+state".)
+
 | level | when | text, about |
 |---|---|---|
 | info | the probe | `loaded: AXP228 at 3-0034; charge current 2100 mA, V_OFF 2900 mV` |
@@ -95,8 +101,10 @@ an event, never in a loop. `dev_*` of the device `uconsole-soft-battery`.
 | info | a model written | `model: 9067 mAh, 33.3 Wh, R 95 mOhm, V_end 3100 mV` |
 | err | a model refused | `model refused: <attribute> = <value>, <why>` |
 | info | the start level | `start level 54 % by voltage: 3711 mV at 1601 mA` |
-| info | the end of a charge | `charge complete: learning started at 4185 mV` |
-| info | a new end of a charge during the learning | `charge complete: learning started again, 1234 mAh counted were dropped` |
+| info | the full state begins (from no full state) | `full: 4204 mV at 21 mA; the learning starts when the charger goes out` |
+| info | the full state begins while a learning runs | `full: learning dropped, 1234 mAh counted; ...` (one line) |
+| info | the charger goes out from the full state | `learning started: 4204 mV at rest, 4104 mV at 1395 mA` |
+| debug | the full state ends by a new charge, the charger in | `full state left: charging again` |
 | warn | the points are full | `learning: 512 points full at 18000 mAh, curve stops, count goes on` |
 | warn | the AXP silent | `AXP silent: 6 reads failed, last -6` |
 | notice | the learning done | `learning done: 9067 mAh, 33.3 Wh in 5 h 40 min, end 3100 mV at 1907 mA` |
