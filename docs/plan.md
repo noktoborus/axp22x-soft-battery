@@ -193,8 +193,17 @@ its values; they are not in dmesg.
 
 ## Open questions
 
-- 0 %: the end of the learned run (proposed), or the point where
-  V − I × R reaches `V_end` at the current load.
+- 0 %: (A) the end of the learned run (proposed), or (B) the point
+  where OCV − I × R reaches `V_end` at the mean current of now, or (C) A
+  with B blended in near the end. Worked out in `discussion.md`, "What
+  0 % is".
+  - A: monotone and simple; off by about 3-5 % at the end when the load
+    differs from that of the learning. Each learning moves the model to
+    the load of use (D14).
+  - B: right at a heavier load; the level jumps with the load and is
+    not monotone; no data past the learned end, so no help at a lighter
+    load; one R for all charge and temperature.
+  - C: more logic in the module (D12).
 - One module (count, learning, level) or two.
 - The program of user space: in the package of the module or in its own.
 - The line `dtoverlay=uconsole-battery` of `config.txt`: by
