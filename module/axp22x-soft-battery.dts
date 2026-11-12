@@ -22,9 +22,11 @@
  *
  *	v_off	V_OFF, the voltage at which the PMIC cuts the power, in uV:
  *		voltage-min-design-microvolt of the cells. 2600000 to
- *		3300000 by 100000; not over end-microvolt.
+ *		3300000 by 100000; not over end.
+ *	end	the voltage of 0 % with no charger, in uV:
+ *		axp22x-soft-battery,end-microvolt. From v_off to 3800000.
  *
- *	dtoverlay=axp22x-soft-battery,v_off=3000000
+ *	dtoverlay=axp22x-soft-battery,v_off=3000000,end=3250000
  */
 
 /dts-v1/;
@@ -133,5 +135,6 @@
 
 	__overrides__ {
 		v_off = <&axp22x_soft_battery_cells>,"voltage-min-design-microvolt:0";
+		end = <&axp22x_soft_battery>,"axp22x-soft-battery,end-microvolt:0";
 	};
 };
