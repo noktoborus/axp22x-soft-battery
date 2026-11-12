@@ -52,28 +52,50 @@ agree is listed at the end, "Fixed on the review".
 
 ### The work in time
 
-Proposed (Q3). The scheme: desk `uconsole-soft-battery-work` of showcase,
+Proposed (Q3; `discussion.md`, "Q3: the work in time, in full"). The
+scheme: desk `uconsole-soft-battery-work` of showcase,
 `shots/1-threads.scheme`.
 
-- One `delayed_work` each 1 s: the reads first, with no lock of ours;
-  then, under one mutex, the count (the time between samples by `ktime`),
-  the learning, the level; then, out of the mutex, the notices.
-- One mutex, ours, for the whole state; held for sums and copies only,
-  microseconds; no call to another part of the kernel while it is held.
-- `get_property` and the attributes take it for a copy and return.
-- `power_supply_changed()`: only when `status` changes or the level moves
-  by 1 %. The class calls `get_property` from its own work, not from ours.
-- The silence of the AXP (D41): 6 failed samples in a row, a sample at
-  most once a second, so about 5 s after the first fail; then the work
-  stops. In the three logs to the silence no read failed before it and
-  none worked after it. A sample counts as failed only when all its three
-  reads give `-ENXIO`; another error is a line `ADC read failed` (rate
-  limited) and the sample is skipped; the number a parameter,
-  `silent_samples` (D41).
+- One `delayed_work` on `system_power_efficient_wq`, each
+  `round_jiffies_relative(HZ)`: about 1 s, at the tick of other timers;
+  not deferrable. The time between samples is measured (`ktime_get()`), so
+  a late or early run counts right.
+- Each run:
+  1. the reads, with no lock of ours: three IIO channels; 0x01 when the
+     charger is in and the current of the charge under 100 mA (D40);
+  2. under our mutex: the count, the state of the learning, the point, R
+     at the 60th second, the level; it notes what changed;
+  3. out of the mutex: `power_supply_changed()` if `status`, the integer
+     percent or `capacity_level` changed; the lines of dmesg; at the
+     silence the uevent (D19), and the work is not queued again (D41);
+  4. queue the next run.
+- `external_power_changed()` (the work of the class, at an IRQ of
+  `axp20x-ac`): `power_supply_am_i_supplied()` (it reads `online` of
+  `axp20x-ac`: one read of 0x00 by that driver), then under our mutex the
+  charger in or out and the time of the edge. The next run does the rest.
+- `get_property` and our attributes: under our mutex a copy of the last
+  sample; no read of the bus. `model_commit`: the lists parsed with no
+  lock, then under the mutex the swap of the model.
+- One lock of ours, a mutex; under it no call to another part of the
+  kernel and no print; held for sums and copies, microseconds.
+- The locks a run takes, beside ours: for each IIO read the
+  `info_exist_lock` of IIO, the lock of the regmap of `axp20x`, the lock of
+  the bus I2C (with the lock of the shared SCL of `i2c-gpio`); for 0x01
+  the last three. The same as `axp20x_battery` takes for one read of
+  sysfs.
+- probe: the IIO channels (`-EPROBE_DEFER`), `battery@0`, the set up of the
+  PMIC, the power supply (`supplied_from = "axp20x-ac"`, `attr_grp`), the
+  charger state by `power_supply_am_i_supplied()`, the first run at once.
+- remove: `cancel_delayed_work_sync()`; the rest by `devm`.
 - Suspend (D33): the work is cancelled; a learning is dropped. Resume:
   the time of the last sample is set to now; the level starts again by
-  the voltage; the work starts again. Not to be tried on the CM5 now
+  the voltage; the work is queued. Not to be tried on the CM5 now
   (`uconsole/linux/notes/suspend-cm5.md`).
+- The silence of the AXP (D41): 6 failed samples in a row, a sample at
+  most once a second, so about 5 s after the first fail; then the work
+  stops. A sample counts as failed only when all its three reads give
+  `-ENXIO`; another error is a line `ADC read failed` (rate limited) and
+  the sample is skipped; `silent_samples` (D41).
 
 ### The marker of the full charge
 
@@ -253,8 +275,10 @@ gives about six lines.
 
 ## Open questions
 
-- Q3. The work in time: one work each 1 s; one mutex, for sums and copies
-  only; `power_supply_changed()` at a change of `status` or of 1 %.
+- Q3. The work in time ("The work in time"): the queue
+  `system_power_efficient_wq`, not deferrable, `round_jiffies_relative`;
+  one mutex; `power_supply_changed()` at a change of `status`, of the
+  integer percent or of `capacity_level`.
 - Q4. The interface: the attributes, the draft and `model_commit`, the
   units, the uevent, the keys of the files, the parameters.
 - Q5. The memory: the points each 50 mAh (fixed), 512 of them.
