@@ -13,17 +13,18 @@ READ   RULE is binding. WHY is context, not negotiable. EX is literal.
 
 ## Project
 
-RULE product = the battery of the uConsole: a kernel module that learns
-     the cells and shows the charge, and the part of user space that saves
-     what it learned and powers the system off
+RULE product = the battery of the uConsole: a kernel module that shows
+     the charge by a model of the device tree, and a daemon of user space
+     that learns the cells, keeps the runs, makes the model as a `.dts`,
+     and powers the system off at the end of a discharge
 RULE device = uConsole with a CM5, the PMIC AXP228
 RULE linux = the research of the kernel: the series of the kernel, the
      packages of repo-uconsole
 RULE hardware = uconsole/hardware: the notes on the PMIC, the
      gauge, the discharge, the tool axp-log
 THEN a fact from there is cited by its path, not copied here
-RULE state : no code yet; the design is closed (`docs/plan.md`); the steps of
-     the work are next
+RULE state : no code yet; the design of variant B is in `docs/plan.md`;
+     the steps of the work are next
 REF  docs/plan.md
 
 ## Layout

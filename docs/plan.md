@@ -1,597 +1,302 @@
 # Plan
 
 The decisions are in `decisions.md`; how they came, in `discussion.md`.
-Each point below names its decision (Dnn), or says "proposed" and the
-number of its question in "Open questions" (Qn).
+Each point names its decision (Dnn). Variant B, the module and the daemon
+of learning, is made (D61, D80); variant A is kept apart, at the end.
 
-Read again on 2026-11-12 against all decisions and answers; what did not
-agree is listed at the end, "Fixed on the review".
+## The parts
 
-## Two variants
+| part | what | name | package |
+|---|---|---|---|
+| the module of the kernel | reads the AXP, works out the level, gives the battery | `axp22x_soft_battery` | `sys-power/axp22x-soft-battery` |
+| the program, in Rust | `daemon`: learns; `gen-dts`: a `.dts` of the model; `import`: a run from a log of axp-log | `axp22x-soft-battery` | `sys-power/axp22x-soft-battery-daemon` |
+| the device tree | the model and the settings of the module | properties of `battery@0` and of the cell `battery-power-supply` | an overlay made by the user from `gen-dts` |
+| the files | the runs | `/var/lib/axp22x-soft-battery/` | made by the daemon |
 
-From 2026-11-12 the plan splits into two variants (D61); B is made first (D80). The design below
-is written for A, as decided until then; what B changes is listed here.
+Names: D62, D64. The module reads its model only from the device tree;
+the daemon gives the module nothing (D87).
 
-- **A: the module and the tools.** The module reads, counts, learns (the
-  bins, R at the start, the model of the run), works out the level; the
-  program `axp22x-soft-battery` runs twice a cycle: `load` at boot by a
-  rule of udev, `save` at the silence by a rule of udev; no service.
-- **B: the module and a daemon of learning**, the daemon
-  `axp22x-soft-battery` (D62). The module reads, counts
-  and works out the level by the model it holds (the default, D58-D60, or
-  the one the daemon wrote); it does not learn. The daemon runs for good
-  (a service), reads the files of sysfs each second, learns, keeps the
-  runs, makes the mean model and writes it at its start and after a run,
-  sees the silence and powers off.
+## The module
 
-Common to both: D1, D2 (who learns differs), D5/D36, D6, D8, D10-D12,
-D14, D15 (the lines of learning come from the module in A, from the
-daemon in B), D17, D18, D21-D23, D25, D26, D28, D29, D32, D33 (in B the
-daemon drops its learning at a suspend), D34 (in B the daemon learns R),
-D35, D37-D41, D45-D55, D57-D60.
+### Rules
 
-Only in A: D3, D13 and D30-D31 (the model by a rule of udev at boot), D16
-(the learning in the memory of the module), D19 (the uevent of the silence
-starts the program), D20 (the module makes the model of the run), D24
-(the learning in the module), D27 (no service), D44 (the bins in the
-module), `run_*` of D43.
-
-Only in B (`discussion.md`, "Variant B in full"). Since D87 the module of
-B reads its model only from the device tree, at the probe; the daemon
-learns, keeps the runs and writes a `.dts` (`gen-dts`); the user makes the
-overlay. No model goes from the daemon to the module.
-
-- QB1, decided (D78, with D70-D76). The module in B, in full (`discussion.md`, "QB1: the
-  module of B in full"):
-  - probe: the IIO channels (`-EPROBE_DEFER`); `battery@0`; the set up of
-    the PMIC (D5, the writes of Rex); `ocv-capacity-table-0` or the curve
-    built in (D59); the model of the device tree (D75), checked as
-    `model_commit` checked it (D43, D51): a bad one is a line of `err` and the
-    voltage alone; the power supply (`supplied_from = "axp20x-ac"`, no
-    `attr_grp`); the charger; the first run.
-  - each 10 s (D70): three reads of IIO; 0x01 on the charger under 100 mA
-    (D40); under the mutex: `charge_counter` += I × dt; the level; the
-    silence count (D41).
-  - the level, one way for the life of the module, fixed at the probe
-    (D87): with no model in the device tree by the voltage alone on the
-    curve (D58-D60), no count; with a model in the device tree the count and
-    C' (D23), the end by `V_thr` (D35), the start by the voltage on the table
-    of the model (D22).
-  - `status` (D40); `health`: `Good`, `Dead` at the silence.
-  - no attributes of its own (D87): no `model_*`, `model_commit`,
-    `model_source`, `run_*`, `learn_*`. The mode is told once, in the line of
-    the probe.
-  - the properties of the class (D43, D55) and `charge_counter` (D63).
-  - suspend: the work cancelled; at resume the time set to now, the level
-    by the voltage again; nothing of a learning to drop.
-  - dmesg: the lines of the module only (bound, with the mode: the model of
-    the device tree or the voltage alone; a model of the device tree
-    refused; the start level; the full state; 0 % by the voltage; the AXP
-    silent; the guard; a read failed; suspend and resume; removed). No lines
-    of a change of mode (D87). The lines of the learning are the daemon's,
-    in the journal (D67).
-  - the settings: properties of the device tree (D73).
-  - the memory: the model (about 104 B), the count, the sums of 30 s, the
-    default curve (84 B, `const`): about 0.2 KiB. No draft, no bins.
-- QB2, decided (D63, D70). The daemon reads each 10 s `charge_counter`,
-  `voltage_now`, `current_now`, `status`, `health` of our battery: the
-  copies of the last sample of the module, no read of the bus; the charge
-  of the learning is the difference of `charge_counter`; the energy by
-  V × I of its own samples. Not the drivers there are (IIO, `axp20x-ac`):
-  that would read the bus twice and lose bit 6 of 0x01 (`discussion.md`,
-  "The daemon with the least tie to the module").
-- QB3, decided (D65, D68, D87): the daemon runs from the boot, a service
-  of systemd, enabled by a preset; no `Restart=`; no rule of udev; no
-  `Before=upower.service`, no `Type=notify` (D87: it gives the module
-  nothing). At each read (10 s) it looks for
-  `/sys/class/power_supply/axp22x-soft-battery/`: not there, it waits.
-- QB4. The learning in the daemon, proposed in full (`discussion.md`,
-  "QB4: the learning of the daemon in full"). The daemon reads each 10 s
-  (D70) `charge_counter`, `voltage_now`, `current_now`, `status`, `health`:
-  - the start: `status` was `Full` at the last read and is not now (the
-    charger out, D39, D40); the voltage and the current at rest are those
-    of that last `Full` read;
-  - R (D34): at 60 s after the start, by the 6 reads of it: within 1 mOhm
-    of the R of the logs at 1 s (76.7 / 78.7 / 80.5 against 76.6 / 78.8 /
-    80.2 mOhm); 0 if the step is under 300 mA;
-  - the charge: `charge_counter` at the read − at the start; the energy:
-    V × I × dt of its own reads (the error of 10 s: 0.2 % at most, "Each
-    second, or events"); the curve: each read kept (V, I, the charge out):
-    some 2000 reads a run, some tens of KiB;
-  - the charger in during a run: the count goes on, net, by
-    `charge_counter`; the full state again: the run starts again (D14);
-  - the end: `health` = `Dead`. `V_end`, `I_end`: the means of the last 3
-    good reads before the first failed one (30 s, D35); the model of the run
-    (D20, D22): `Q_full`, `E_full`, R, the table of 21 points by the means
-    of 60 s about each 5 %; the check (D54); `runs/` or `invalid/` (D45);
-    `systemctl poweroff --force` (D49). No mean here: `gen-dts` makes it
-    (D81);
-  - the module gone in a run (the directory of our battery not there, or
-    `charge_counter` smaller than at the start by more than the run could
-    give): the run is dropped, a line in the journal; the daemon waits for
-    the module;
-  - a suspend: the run dropped, the daemon exits (D66, D69); a stop of the
-    daemon: the run lost (in memory, D16).
-  - the temperature of the PMIC (D85): once a minute from
-    `/sys/class/hwmon/hwmon*/` with `name` = `axp_hwmon`, `temp1_input`
-    (m°C); in the file of the run `RUN_TEMP_MEAN`, `RUN_TEMP_MIN`,
-    `RUN_TEMP_MAX`; not a part of the model. `gen-dts` writes
-    `ocv-capacity-celsius` as the mean temperature of the runs it takes
-    (D86).
-- QB5, decided (D66, D69): a growth of `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`
-  drops the learning (D33), and the daemon exits (exit code 0; no
-  `Restart=`). After that, in the same boot: no learning of a later full
-  charge, and no model written if the module is loaded again (it runs on
-  its default until the next boot).
-- QB6, decided (D67): stdout and stderr into the journal; the lines of
-  the module stay in dmesg.
-
-## The design
-
-### The rules of the module
-
-- The module does its job and nothing more (D12); it never powers off
-  (D11); the AXP is no store, its gauge is not used (D8).
-- It weighs as little as it can on the running system: as few locks as it
-  can, and the interfaces of the drivers there are, not its own (D37).
-- It is small and easy to read (D38).
+- It does its job and nothing more (D12); it powers the system off only
+  as the guard of the silence (D11, D71).
+- It weighs as little as it can on the system: few locks, the interfaces
+  of the drivers there are (D37); it is small and easy to read (D38, D88).
+- The AXP is no store, its gauge is not used (D8): not E0:E1, not E2:E3,
+  not B9.
 
 ### Where it binds
 
-- The module binds to the cell `battery-power-supply` of the MFD `axp20x`
-  in place of `axp20x_battery` (D36). Its `of_match_table` has
-  `x-powers,axp221-battery-power-supply`; udev loads it by the alias of
-  that device. The package blacklists `axp20x_battery`. No overlay, no
-  node of its own; the kernel, its drivers, the device tree and
-  `config.txt` are not changed (D32, D36).
-- One power supply of type Battery, `axp22x-soft-battery` (D26).
-- One module: the set up, the count, the learning and the level (D24).
+- To the cell `battery-power-supply` of the MFD `axp20x`, in place of
+  `axp20x_battery`: `of_match_table` with
+  `x-powers,axp221-battery-power-supply`; the package blacklists
+  `axp20x_battery` (`/etc/modprobe.d/axp22x-soft-battery.conf`, D36). The
+  kernel, its drivers and the overlay of the device are not changed.
+- The ebuild stops with `CONFIG_BATTERY_AXP20X=y`; the source has `#if
+  IS_BUILTIN(CONFIG_BATTERY_AXP20X)` and `#error` (D36).
 
-### What it reads, and how
+### probe
 
-- The voltage and the currents of the cells: the IIO channels of
-  `axp20x_adc`, `batt_v`, `batt_chrg_i`, `batt_dischrg_i` (D36), by
-  `devm_iio_channel_get()`; `-EPROBE_DEFER` while they are not there. The
-  values change about once a second (the records `fast` of the log of
-  08.11): a sample each 1 s loses nothing.
-- The values of `battery@0` (the current of the charge, the voltages,
-  `charge_full_design`): `power_supply_get_battery_info()` on the node of
-  the cell, which has `monitored-battery` (D36).
-- The charger in or out (D39): from `axp20x-ac` of `axp20x_ac_power`, by
-  its IRQ: our power supply names it in `supplied_from`, and the class
-  calls our `external_power_changed()` at each change; no read of 0x00.
-- Bit 6 of 0x01 (D40): by the regmap of `axp20x` (a read of the bus;
-  0x00-0x01 are volatile), only while the charger is in and the current of
-  the charge is under 100 mA. Else the regmap of the parent serves only the
-  set up at the probe.
-- At each probe the module sets the PMIC up (D5, D36): the current of the
-  charge (2.1 A of `battery@0`), `V_OFF` (0x31), the voltage of the full
-  charge, and the five writes of Rex of `axp20x_power_probe` (0x30, 0x32,
-  0x34, 0x36, 0x90; their meaning to check, step 1).
+1. The IIO channels of `axp20x_adc`: `batt_v`, `batt_chrg_i`,
+   `batt_dischrg_i` (`devm_iio_channel_get()`; `-EPROBE_DEFER` while they
+   are not there).
+2. `power_supply_get_battery_info()` on the cell (it has
+   `monitored-battery`): the voltages, the current of the charge, the
+   energy of design, `ocv-capacity-table-0`,
+   `factory-internal-resistance-micro-ohms`.
+3. The set up of the PMIC (D5): the current of the charge (2.1 A), `V_OFF`
+   (0x31) from `voltage-min-design`, the voltage of the full charge, the
+   five writes of Rex (0x30, 0x32, 0x34, 0x36, 0x90; `discussion.md`, "The
+   writes of Rex").
+4. The settings and the model from the device tree ("The device tree"
+   below); each value checked; a bad one: a line of `err`, its default.
+5. The power supply `axp22x-soft-battery`, `supplied_from = { "axp20x-ac" }`
+   (D39); no attributes of its own (D87).
+6. The charger by `power_supply_am_i_supplied()`; the first run of the
+   work.
 
-### The work in time
-
-D42 (`discussion.md`, "Q3: the work in time, in full"). The
-scheme: desk `uconsole-soft-battery-work` of showcase,
-`shots/1-threads.scheme`.
+### The work
 
 - One `delayed_work` on `system_power_efficient_wq`, each
-  `round_jiffies_relative(HZ)`: about 1 s, at the tick of other timers;
-  not deferrable. The time between samples is measured (`ktime_get()`), so
-  a late or early run counts right.
-- Each run:
-  1. the reads, with no lock of ours: three IIO channels; 0x01 when the
-     charger is in and the current of the charge under 100 mA (D40);
-  2. under our mutex: the count, the state of the learning, the point, R
-     at the 60th second, the level; it notes what changed;
-  3. out of the mutex: `power_supply_changed()` if `status` or the integer
-     percent changed (D55); the lines of dmesg; at the
-     silence the uevent (D19), and the work is not queued again (D41);
-  4. queue the next run.
-- `external_power_changed()` (the work of the class, at an IRQ of
-  `axp20x-ac`): `power_supply_am_i_supplied()` (it reads `online` of
-  `axp20x-ac`: one read of 0x00 by that driver), then under our mutex the
-  charger in or out and the time of the edge. The next run does the rest.
-- `get_property` and our attributes: under our mutex a copy of the last
-  sample; no read of the bus. `model_commit`: the lists parsed with no
-  lock, then under the mutex the swap of the model.
-- One lock of ours, a mutex; under it no call to another part of the
-  kernel and no print; held for sums and copies, microseconds.
-- The locks a run takes, beside ours: for each IIO read the
-  `info_exist_lock` of IIO, the lock of the regmap of `axp20x`, the lock of
-  the bus I2C (with the lock of the shared SCL of `i2c-gpio`); for 0x01
-  the last three. The same as `axp20x_battery` takes for one read of
-  sysfs.
-- probe: the IIO channels (`-EPROBE_DEFER`), `battery@0`, the set up of the
-  PMIC, the power supply (`supplied_from = "axp20x-ac"`, `attr_grp`), the
-  charger state by `power_supply_am_i_supplied()`, the first run at once.
-- remove: `cancel_delayed_work_sync()`; the rest by `devm`.
-- Suspend (D33): the work is cancelled; a learning is dropped. Resume:
-  the time of the last sample is set to now; the level starts again by
-  the voltage; the work is queued. Not to be tried on the CM5 now
-  (`uconsole/linux/notes/suspend-cm5.md`).
-- The silence of the AXP (D41, D70): 6 failed samples in a row, a sample
-  each 10 s, so about 1 min after the first fail: `health` = `Dead`. The
-  work goes on: at 12 failed samples (about 2 min) the guard,
-  `hw_protection_trigger()` (D71). A sample counts as failed only when all
-  its three reads give `-ENXIO`; another error is a line `ADC read failed`
-  (rate limited) and the sample is skipped; `silent_samples` (6),
-  `guard_samples` (12).
+  `sample-interval-ms` (10 s, D70, D72), `round_jiffies_relative`, not
+  deferrable; the time by `ktime_get()` (D42).
+- Each run: the three reads of IIO; 0x01 by the regmap of the parent only
+  while the charger is in and the current of the charge is under
+  `full-current-microamp` (D40); then under one mutex the means of 30 s
+  (3 samples), the level, `status`, the count of failed samples; then, out
+  of the mutex, `power_supply_changed()` if `status` or the integer percent
+  changed (D55), and the lines of dmesg.
+- The charger in or out: `external_power_changed()` from `axp20x-ac`
+  (D39); one read of `online` by that driver at each edge.
+- `get_property`: a copy of the last sample under the mutex; no read of the
+  bus (D42).
+- One mutex of the module; nothing called under it. No count of the
+  charge in the module (D89, D90).
 
-### The marker of the full charge
+### The level
 
-- The full state (D39, D40): the charger in, the current of the charge
-  (IIO) under 100 mA, the voltage at least `voltage-max-design` − 50 mV
-  (`full_margin_uv`), bit 6 of 0x01 = 0. The AXP ends a charge at 10-15 %
-  of the charge current (210-315 mA at 2.1 A); in the full state the logs
-  show 12-50 mA.
-- Each sample in the full state starts the learning again, silently. The
-  learning starts in fact at the edge of the charger going out
-  (`external_power_changed()`, `online` 1 → 0) when the last sample before
-  it was in the full state (`discussion.md`, "What starts the learning").
-- `status` (D40): no charger → `Discharging`; the charger in, the current
-  100 mA or more → `Charging`, no read; under 100 mA, bit 6 = 1 →
-  `Charging`; bit 6 = 0 and at the threshold or over → `Full`; bit 6 = 0
-  under it → `Not charging`. upower: `Full` → "fully charged"; `Not
-  charging` → "pending charge", or "fully charged" at 90 % or more.
+By the voltage always (D90), on two curves (D91):
 
-### The learning
-
-- It starts at each full charge (D14), by the marker; it is kept in the
-  memory of the module only (D16); a reboot, a cut by `V_OFF`, a suspend
-  drop it (D17, D33).
-- It counts the charge (net, in − out) and the energy; it keeps the
-  curve in bins that merge when full (D44).
-- R (D34): at the 60th second after the charger goes out: (the voltage
-  at rest − the mean voltage of the first 60 s) / (the mean current of
-  those 60 s + the current at rest); 0 if that step is under 300 mA.
-- The end (D2, D4): the silence of the AXP. `V_end` is the mean voltage of
-  the last 30 s, `I_end` the mean current (D35).
-- At the end the module makes the model of the run (D20): `Q_full`,
-  `E_full`, `R`, `V_end`, `I_end`, the table of 21 points, one each 5 % of
-  the charge out, the mean V and I under load at each (D22); puts it in
-  `run_*`; sends the uevent (D19).
-
-### The memory of the learning
-
-D44 (`discussion.md`, "Q5: the memory"). One allocation at the probe; none
-in the work.
-
-| what | size |
+| state | the level |
 |---|---|
-| the curve: 80 bins, the mean V (u16, mV) and I (u16, mA) each | 320 B |
-| the models, in use, the draft, the run: 21 points of u16 mV and u16 mA, 5 values | 3 × about 104 B |
-| the count, the sums of the bin that is filled now, R at the start, the end | about 90 B |
+| no charger | OCV ≈ V + I × R on the curve of the discharge |
+| the charger in, the voltage under `voltage-max-design` − `full-margin-microvolt` | OCV ≈ V − I × R on the curve of the discharge |
+| the charger in, the voltage at that or over (the phase of constant voltage) | the current of the charge on the curve of the charge |
+| the full state (D40) | 100 % |
 
-About 0.75 KiB. The first step is 25 mAh; when the 80 bins are full, each
-two next bins become one (the means of the two) and the step doubles; the
-count goes on. At the end of any run 40-80 bins are used, each 1.25-2.5 %
-of the charge; the 21 points of the table are put on them by a line
-between the middles of the bins. No bound of the capacity, no need to
-know it before. The interface gives µV and µA; the module keeps mV and
-mA.
+- V and I are the means of 30 s; R is `factory-internal-resistance-micro-ohms`
+  of `battery@0`, else 87 mOhm.
+- On a discharge the level does not rise (D60); on a charge it does not
+  fall (D91).
+- 0 % when the mean of 30 s of the voltage is `end-microvolt` or under
+  (D21, D35).
+- The curve of the discharge: `ocv-capacity-table-0`, else the one built in
+  (D59: the mean of the three logs). The curve of the charge:
+  `axp22x-soft-battery,charge-cv-table`, else none: in the phase of constant
+  voltage the level then does not fall, and `Full` sets 100 % (D91).
 
-### The model and the level
+### status (D40)
 
-- The model (D22, D34, D35): `Q_full`, `E_full`, `R`, `V_end` (here the
-  threshold `V_thr`), `I_end`, the table of 21 points under load.
-- With no model: `Q_full` = `charge_full_design` of `battery@0`, not
-  guessed (D44); the
-  table of the run of 24.10 (`hardware/notes/discharge-cm5.md`); the end
-  3.2 V (D21), `end_uv`; R 87 mOhm, `r_uohm` (D34). Both parameters of
-  the module (D36).
-- The level (D23, D35): the count, `charge_now / Q_full`; the full state
-  sets 100 %. On a discharge it falls at the speed of the count times
-  f = (the level shown) / (left by the voltage), f in 0.5..2; the voltage
-  weighs nothing above 30 % and in full at 10 %; V and I are means of
-  30 s; "left" runs to the place of `V_thr` on the table moved to the
-  current of now: V_t(x) − (I − I_t(x)) × R = `V_thr`. The level never
-  rises on a discharge; it is 0 % when the mean of 30 s of the voltage is
-  `V_thr` or under. On the charger the count only.
-- The start level (a probe, a new model, a resume): by the voltage, the
-  means of 30 s, the place on the table moved by R (D22, D34).
-- `power_supply_batinfo_ocv2cap()` of the kernel takes a table of OCV; the
-  table under load does not fit it; the module looks up its own.
+- No charger: `Discharging`.
+- The charger in, the current of the charge `full-current-microamp` or
+  more: `Charging`, no read of 0x01.
+- Under it: bit 6 of 0x01 = 1 → `Charging`; bit 6 = 0 and the voltage at
+  `voltage-max-design` − `full-margin-microvolt` or over → `Full` (the full
+  state); bit 6 = 0 under it → `Not charging`.
 
-### The interface
+### The properties (D43, D55, D92-D95)
 
-D43 (`discussion.md`, "Q4: the interface, in full"). Units of the
-power supply class: µV, µA, µAh, µWh, µΩ.
+`present`, `status`, `technology` (from `device-chemistry`), `capacity`,
+`voltage_now`, `current_now` (negative on a discharge), `power_now`
+(V × I), `energy_now` (the level × `energy_full`), `energy_full` (the
+model of the device tree, else the design), `energy_full_design`
+(`battery@0`), `voltage_min_design`, `voltage_max_design`,
+`constant_charge_current_max`, `internal_resistance` (the R in use),
+`scope` (System).
 
-The properties of the class (read by upower and by anyone):
-`present`, `status` (D40), `health` (`Good`; `Dead` at the silence),
-`technology`, `capacity`, `voltage_now`, `current_now` (negative in a
-discharge), `power_now` (V × I of the last sample, the sign of
-`current_now`, D55), `charge_full` (`Q_full` of the model in use),
-`charge_full_design` (`battery@0`), `charge_now` (the level × `Q_full`),
-`energy_full`, `energy_full_design`, `energy_now` (the level × `E_full`),
-`internal_resistance` (R of the model in use; a property of the class
-since 2025), `voltage_min_design`, `voltage_max_design`,
-`constant_charge_current_max`, `scope` (System). No `time_to_empty_now`,
-`time_to_full_now`, `capacity_level` (D55): upower works the times out
-itself, and reads `capacity_level` only at `capacity` = 0.
+Not given: `temp` (D92), `charge_*` (D95), `capacity_level` and
+`time_to_*` (D55), `health` (D93), `charge_counter` (D90). upower works out
+the times, the health and the percent of the display device from the
+energy (`discussion.md`, "What upower reads, and what soft-battery gives").
 
-Its own attributes (`attr_grp`), one value or one list of one type per
-file (`Documentation/filesystems/sysfs.rst`):
+### The silence of the AXP
 
-| attribute | mode | what |
-|---|---|---|
-| `model_q_full`, `model_e_full`, `model_r`, `model_v_end`, `model_i_end` | rw | the draft of the model: a number each |
-| `model_table_uv`, `model_table_ua` | rw | the draft of the table: a list each, split by spaces, the same length |
-| `model_commit` | wo | `1`: the draft is checked and becomes the model in use, at once |
-| `model_source` | ro | `default` or `loaded` |
-| `run_q_full`, `run_e_full`, `run_r`, `run_v_end`, `run_i_end`, `run_table_uv`, `run_table_ua` | ro | the run as learned (D29); `-ENODATA` until `done` |
-| `learn_state` | ro | `idle`, `full`, `learning`, `done` |
-| `learn_charge` | ro | the charge counted by the learning that runs, µAh |
+- A sample fails when all its three reads of IIO give `-ENXIO`; another
+  error, or a part of them, is a line `ADC read failed` (rate limited) and
+  the sample is skipped (D41).
+- `silent-samples` (6) failed samples in a row, about 1 min: the silence.
+  From then `status`, `capacity`, `voltage_now`, `current_now`,
+  `power_now`, `energy_now` give `-ENODATA` (D93, D94); the values of design
+  stay. The work goes on.
+- `guard-samples` (12) failed samples, about 2 min:
+  `hw_protection_trigger("AXP silent", 20000)` (D71).
 
-- The draft: at the probe it holds the default model; a write changes
-  the draft only; a read gives the draft; after a commit the draft is the
-  model in use. The model in use is seen by `charge_full`, `energy_full`,
-  `internal_resistance` and `model_source`.
-- The checks of `model_commit`: the two lists of the same length, 2 to 64
-  points; the voltage of the table falls along it; `Q_full` 0.5-50 Ah;
-  R 10-500 mΩ; `V_end` from `voltage-min-design` of `battery@0` (`V_OFF`, D51) to 3.8 V. A bad value: `-EINVAL`, one line in
-  dmesg, the model in use stays.
-- The silence (D19): the module sets `health` to `Dead`, `learn_state` to
-  `done` when a run is there, and calls `power_supply_changed()`: the
-  uevent `change` of the class carries `POWER_SUPPLY_HEALTH=Dead`. The rule
-  of udev matches that key; the program reads `learn_state` and `run_*`.
-  No uevent and no keys of our own. After the silence the work stops, so
-  there is no second such uevent.
-- The keys of the files of runs and of the output of `load`: the names of
-  the attributes in capitals (`RUN_Q_FULL`, `MODEL_Q_FULL`); a run becomes
-  a model by its prefix.
-- The settings (D73): properties of the device tree with defaults, read
-  once at the probe; no parameters of the module. On the cell
-  `battery-power-supply`, prefix `axp22x-soft-battery,`:
+### Suspend (D33)
 
-  | property | default | what |
-  |---|---|---|
-  | `sample-interval-ms` | 10000 | the period of the work (D70, D72) |
-  | `end-microvolt` | 3200000 | 0 % with no model (D21) |
-  | `full-margin-microvolt` | 50000 | the full state: `voltage-max-design` − this (D39) |
-  | `full-current-microamp` | 100000 | the full state: the current of the charge under this (D39) |
-  | `silent-samples` | 6 | failed samples to `health` = `Dead` (D41) |
-  | `guard-samples` | 12 | failed samples to `hw_protection_trigger()` (D71) |
-  | `mean-seconds` | 30 | the means of V and I (D23) |
-  | `f-min-percent`, `f-max-percent` | 50, 200 | the bounds of f (D23) |
-  | `weight-from-percent`, `weight-full-percent` | 30, 10 | the weight of the voltage (D23) |
+The work is cancelled at suspend; at resume the time of the last sample is
+set to now and the work goes on. Not to be tried on the CM5 now
+(`uconsole/linux/notes/suspend-cm5.md`).
 
-  On `battery@0`, the standard ones of `simple-battery`:
-  `factory-internal-resistance-micro-ohms` (R with no model; 87000) and
-  `ocv-capacity-table-0` (the curve with no model; the one built in, D59).
-  A change: the overlay and a boot.
+### dmesg (D15)
 
-### dmesg
+One line at an event, never in a loop; the prefix `axp22x_soft_battery
+axp20x-battery-power-supply:`.
 
-D15: the list and the rule (a line at a change of state, not at each
-sample) are in `discussion.md`, "dmesg, the list after D33-D36". The
-prefix is `axp22x_soft_battery axp20x-battery-power-supply:`. A cycle
-gives about six lines.
+- `bound: charge current 2100 mA, V_OFF 2900 mV, full at 4200 mV`, and the
+  sources: the curve of the discharge (the device tree or built in), the
+  curve of the charge (the device tree or none), R, `energy_full` (D76,
+  D87).
+- `<property> refused: <value>, <why>; the default taken` (`err`).
+- `full: 4204 mV at 21 mA`; `charger out`; `level 0 %: 3211 mV at 2450 mA`.
+- `AXP silent: 6 samples failed, last -6`; `guard: power off`.
+- `ADC read failed: -5` (rate limited); `suspend`; `resume`; `removed`.
 
-The mode of the level (D76, D87): in B told once, in the line of the
-probe; no lines of a change (the mode does not change in the life of the
-module):
+### Memory
 
-```
-bound: charge current 2100 mA, V_OFF 2900 mV, full at 4200 mV; mode: by voltage, no model in the device tree (no ocv-capacity-table-0, no charge-full); the curve built in, R 87 mOhm
-bound: charge current 2100 mA, V_OFF 2900 mV, full at 4200 mV; mode: by model of the device tree, 9067 mAh, 33.3 Wh, R 78 mOhm, end 3211 mV, 21 points
-```
+The curve of the discharge (21 × u16), the curve of the charge (up to 16
+pairs of u16), the sums of 30 s, the last sample: under 0.2 KiB. The
+default curve is `const`.
 
-### User space
+## The device tree
 
-- The program `axp22x-soft-battery`, in Rust (D25), package
-  `sys-power/axp22x-soft-battery-tools` (D26).
-- At the silence: a rule of udev on `POWER_SUPPLY_HEALTH=Dead` (D43) runs
-  `axp22x-soft-battery save` right in `RUN` (D27); no service. The sandbox of udevd allows its work
-  (`discussion.md`, "The sandbox of udevd").
-  - With no run: a forced power off (D19).
-  - With a run: it checks it (proposed, Q6), keeps it as
-    `/var/lib/axp22x-soft-battery/runs/<seq>.env` (D29, D45), or, if it
-    fails the check, `invalid/<seq>.env` (D45); `fsync` of the file and of
-    its directory, then a forced power off. No mean here (D30).
-  - Its lines go into `/dev/kmsg` (D27).
-- At boot: the rule on `add` of the power supply runs `axp22x-soft-battery
-  load` by `IMPORT{program}` (D13, D30); `load` reads all runs each time
-  (D31), makes the mean model and prints it; `ATTR{}` writes the draft,
-  `ATTR{model_commit}="1"` last. No valid run: nothing is printed or
-  written.
+| node | property | default | what |
+|---|---|---|---|
+| `battery@0` | `ocv-capacity-table-0`, `ocv-capacity-celsius` | the curve built in | the curve of the discharge (D59, D75, D86) |
+| `battery@0` | `factory-internal-resistance-micro-ohms` | 87000 | R (D73, D75) |
+| the cell | `axp22x-soft-battery,energy-full-microwatt-hours` | the design of `battery@0` | `energy_full` (D75, D95) |
+| the cell | `axp22x-soft-battery,end-microvolt` | 3200000 | 0 % (D21, D35, D73) |
+| the cell | `axp22x-soft-battery,charge-cv-table` | none | the curve of the charge: pairs of µA and percent (D91) |
+| the cell | `axp22x-soft-battery,sample-interval-ms` | 10000 | the period of the work (D70, D72) |
+| the cell | `axp22x-soft-battery,full-margin-microvolt` | 50000 | the full state (D39) |
+| the cell | `axp22x-soft-battery,full-current-microamp` | 100000 | the full state (D39) |
+| the cell | `axp22x-soft-battery,silent-samples` | 6 | the silence (D41) |
+| the cell | `axp22x-soft-battery,guard-samples` | 12 | the guard (D71) |
 
-  ```
-  ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="axp22x-soft-battery", \
-    IMPORT{program}="/usr/bin/axp22x-soft-battery load", \
-    ENV{MODEL_Q_FULL}=="?*", \
-    ATTR{model_q_full}="$env{MODEL_Q_FULL}", ..., \
-    ATTR{model_commit}="1"
-  ```
-- The mean model (D29, D35, D48, D54): `V_end` is the
-  highest of the runs in `runs/` (the last 5), + 50 mV; the other values
-  and each pair (V, I) of the table: the mean of the same runs.
-- `/var` is to be mounted when the rule runs; one root partition gives it.
-- The files (D45-D48): `runs/` (the last 5: the mean and the highest
-  `V_end`), `archive/` (set aside by age by `load`, or by `reset`),
-  `invalid/` (failed the check).
-- The check of a run before `runs/` (D54): the checks of a model (in B the
-  module makes them on the model of the device tree, D87), as of `model_commit`
-  (D43, D51).
-- `seq` (D52); `load --apply` (D53).
-- The crates (D50, D54): `lexopt` only; errors by
-  `Box<dyn std::error::Error>`; `lto = "fat"`, `codegen-units = 1`.
+Read once at the probe; a change is a new overlay and a boot.
 
-### The packages
+## The program
 
-- Two packages (D6, D25); the source a copy in `files/` of each, made by a
-  script of this repository, with its sum in the ebuild (D28).
-- The module: `sys-power/axp22x-soft-battery` (D26), `linux-mod-r1`,
-  `virtual/dist-kernel`; it installs the module and
-  `/etc/modprobe.d/axp22x-soft-battery.conf`, `blacklist axp20x_battery`
-  (D36). The ebuild stops with `CONFIG_BATTERY_AXP20X=y`
-  (`linux_chkconfig_builtin`); the source has `#if
-  IS_BUILTIN(CONFIG_BATTERY_AXP20X)` and `#error`.
-- The program: `sys-power/axp22x-soft-battery-tools` (D26), `cargo`; the
-  program and both rules of udev. Crates and fat LTO (D50): the ebuild
-  takes the crates from crates.io by `CRATES` (`cargo_crate_uris`), each
-  with its line in `Manifest`; that `lto = "fat"` of `Cargo.toml` holds
-  under the `cargo` eclass is to see in the log of the build.
-- The guard (D71): in the main module. After the silence (6 failed
-  samples, `health` = `Dead`) the work goes on; at 12 failed samples in a
-  row (about 2 min at 10 s, D70) `hw_protection_trigger("AXP silent",
-  20000)`: an orderly power off, forced after 20 s. No `axp22x_guard`, no
-  file of modules-load. Without our package (the old way, `axp20x_battery`)
-  there is no guard: 0010 left the series (D4).
+Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
+`lto = "fat"`, `codegen-units = 1` (D50, D54).
+
+### `axp22x-soft-battery daemon`
+
+- A service of systemd, enabled by a preset, from the boot; no `Restart=`,
+  no rule of udev, no order against upower (D68, D79, D87). Its log is the
+  journal (D67).
+- Each 10 s it reads `status`, `voltage_now`, `current_now` of
+  `/sys/class/power_supply/axp22x-soft-battery/` (D63, D70); once a minute
+  `temp1_input` of the hwmon `axp_hwmon` (D85). The directory not there: it
+  waits.
+- A run of a discharge (D96):
+  - the start: `status` was `Full` and is not now (D14); the values at rest
+    are those of that last `Full` read;
+  - R at 60 s, by the 6 reads after the start (D34); 0 if the step is under
+    300 mA;
+  - the charge and the energy by trapezoids over `CLOCK_MONOTONIC` (D89);
+    each read kept: the charge out, V, I;
+  - the charger in during a run: the count goes on, net; `Full` again: the
+    run starts again;
+  - the end: a read gives `ENODATA` (D94). `V_end`, `I_end`: the means of
+    the last 3 good reads; the model of the run: `Q_full`, `E_full`, R,
+    `V_end`, `I_end`, the table of 21 points as OCV (V + I × R, the means of
+    60 s at each 5 %) (D90), the temperature (D85); the check (D54, D51);
+    the file `runs/<seq>.env` or `invalid/<seq>.env` (D45, D52), `fsync`;
+    the oldest past 5 in `runs/` to `archive/` (D90); `systemctl poweroff
+    --force` (D49).
+- A run of a charge (D91): from the charger in to `Full`, the device on;
+  each read kept (the charge in, V, I); at `Full` each point gets its
+  percent back from 100 % by the charge in and `Q_full`; the points of the
+  phase of constant voltage give the curve of the charge (the current →
+  the percent).
+- What ends a run, with a line in the journal, and the daemon exits (D89,
+  D97): a suspend (by `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`, D66, D69); a
+  gap of over 60 s between two reads; the directory of the battery gone; a
+  read that fails with another error than `ENODATA`; a current past the
+  bounds of the ADC; a stop of the daemon (SIGTERM: a power off by upower
+  or by hand): "the run was broken off".
+- At each exit, for any cause, the daemon prints to the journal the data
+  it gathered: the run so far, cut short or whole (D97, D98).
+- The settings of upower are left alone (D97).
+
+### `axp22x-soft-battery gen-dts`
+
+The model of `runs/` as it would be for the module (D81): the mean of the
+runs (each value, each point of the tables), `end-microvolt` = the highest
+`V_end` + 50 mV (D35, D48), `ocv-capacity-celsius` = the mean temperature
+(D86); an overlay `.dts` with `target-path` to `battery@0` and to the cell
+(D82), to stdout. The user compiles it (`dtc -@ -I dts -O dtb`) and puts
+it into `config.txt` by hand (D32, D87).
+
+### `axp22x-soft-battery import <log>`
+
+A log of axp-log, from the full state to the silence, into a run of
+`runs/` (D90). The three logs of `uconsole/hardware/tools/axp-log/dump/`
+give a model of the device tree at once, and serve as tests of the
+learning.
+
+### The files
+
+`/var/lib/axp22x-soft-battery/`: `runs/` (the last 5 valid runs),
+`archive/` (the valid runs past 5), `invalid/` (those that failed the
+check) (D45-D48, D90). A file: lines `KEY=value`, `seq` of 6 digits (D52).
+
+## The packages
+
+- The source is a copy in `files/` of each package, made by a script of
+  this repository with its sum in the ebuild (D28); `repo-uconsole` of
+  `uconsole/linux`.
+- `sys-power/axp22x-soft-battery`: `linux-mod-r1`, `virtual/dist-kernel`;
+  the module and `/etc/modprobe.d/axp22x-soft-battery.conf` (`blacklist
+  axp20x_battery`).
+- `sys-power/axp22x-soft-battery-daemon`: `cargo` (the crates in `CRATES`);
+  the program, `axp22x-soft-battery.service`, its preset.
+- `config.txt` is not changed by a package (D32).
 - Put off: the module in the tree of the kernel,
   `plans/axp22x-soft-battery-in-tree.md`.
 
-### The default curve
+## The kernel series
 
-D58, D59. With no model the module works out the percent by the voltage
-alone: OCV = V + I × R (the means of 30 s, R `r_uohm`), on
-`ocv-capacity-table-0` of `battery@0` if the device tree has it, else on
-the curve built in. 100 % in the full state (D40); 0 % at `V_thr`
-(`end_uv`, D21). On a discharge the level does not rise: the least of what was shown
-since the charger went out (D60).
-
-The curve built in: the mean of the three logs to the silence (24.10,
-25.10, 08.11), `tools/make-curve.py 87`; the percent is of the charge of
-each run to its silence:
-
-| % left | 100 | 95 | 90 | 85 | 80 | 75 | 70 | 65 | 60 | 55 | 50 |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| OCV, mV | 4221 | 4119 | 4093 | 4084 | 4075 | 4064 | 4035 | 3988 | 3934 | 3897 | 3868 |
-
-| % left | 45 | 40 | 35 | 30 | 25 | 20 | 15 | 10 | 5 | 0 |
-|---|---|---|---|---|---|---|---|---|---|---|
-| OCV, mV | 3837 | 3799 | 3760 | 3716 | 3664 | 3608 | 3554 | 3499 | 3437 | 3351 |
-
-```c
-/* OCV, mV, at 100, 95, ... 0 % left */
-static const u16 default_ocv_mv[21] = {
-	4221, 4119, 4093, 4084, 4075, 4064, 4035, 3988, 3934, 3897, 3868,
-	3837, 3799, 3760, 3716, 3664, 3608, 3554, 3499, 3437, 3351
-};
-```
-
-The same as the device tree takes it:
-
-```
-ocv-capacity-celsius = <25>;
-ocv-capacity-table-0 = <4221000 100>, <4119000 95>, <4093000 90>,
-	<4084000 85>, <4075000 80>, <4064000 75>, <4035000 70>,
-	<3988000 65>, <3934000 60>, <3897000 55>, <3868000 50>,
-	<3837000 45>, <3799000 40>, <3760000 35>, <3716000 30>,
-	<3664000 25>, <3608000 20>, <3554000 15>, <3499000 10>,
-	<3437000 5>, <3351000 0>;
-```
-
-The error of the level by the voltage alone, at each 30 s of each log:
-with this curve, the mean −2.4 to +2.2 %, the largest 4.7 %; with the curve
-of the two other logs only, the largest 7.2 %. At the bottom the curves of
-the runs part (132 mV at 0-5 %): the silence comes at another OCV at
-another load; the end of D35 (0 % at `V_thr` under load) sets 0 % there,
-not the curve.
+0010 leaves the series (D4, D57, D71): its work is the guard of the
+module. `kernel/bump.sh --sum` after. In `uconsole/linux`, committed by the
+user.
 
 ## Steps
 
-1. Done: the five writes of Rex, read in the datasheet
-   (`discussion.md`, "The writes of Rex"). Left to see: where GPIO0 of the
-   AXP goes on the board (the schematic, the net `AGPIO0`).
-2. Done: the scheme of showcase is in line with D36, D37, D41, D43.
-3. The packages: the script of the copy (D28), the ebuilds; `linux-mod-r1`
+1. Done: the writes of Rex in the datasheet. Left: where GPIO0 of the AXP
+   goes (the schematic); the full paths of `battery@0` and of
+   `battery-power-supply` in `/proc/device-tree`, for `gen-dts`.
+2. Done: the scheme of B on the desk of showcase,
+   `shots/3-variant-b.scheme`.
+3. A log of axp-log of a full charge, the device on, from low to `Full`:
+   the curve of the charge built in (D91).
+4. The packages: the script of the copy, the two ebuilds; `linux-mod-r1`
    and `cargo` in the cross build of unidev.
-4. The module.
-5. The program.
-6. The kernel series: 0010 out (D4, D57), `bump.sh --sum`.
-7. A test on the device: a full charge, a discharge to the silence, the
-   save, the power off, the model at the next boot.
+5. The module.
+6. The program: `import` first (the three logs), then `gen-dts`, then
+   `daemon`.
+7. The kernel series: 0010 out.
+8. A test on the device: the module with no model (the voltage alone); a
+   model from the three logs by `import` and `gen-dts`; a full charge and a
+   discharge to the silence with the daemon.
 
 ## Open questions
 
-- QB4: variant B, in "Two variants", proposed in full.
-- Q12, decided (D75). The model in the device tree (D74):
-  - the table and R: the standard `ocv-capacity-table-0` and
-    `factory-internal-resistance-micro-ohms` of `battery@0`; the capacity:
-    `axp22x-soft-battery,charge-full-microamp-hours` and
-    `axp22x-soft-battery,energy-full-microwatt-hours` on the cell, not the
-    `*-design` ones (those stay the design: upower works the health out of
-    `energy_full` / `energy_full_design`); the end: `end-microvolt` (D73);
-  - a model of the device tree = the table and the two capacities there;
-    with any of them missing, the voltage alone (D58) on what there is;
-  - `model_source` and `model_commit`: of A only; in B the module has no
-    attributes (D87);
-  - in B the piece of the device tree is made by `gen-dts` (D81), not
-    written to the journal after a run (D87).
-- Q13, decided (D77, D81, D82). The modes of the program of B:
-  - `axp22x-soft-battery daemon`: the service of D68 runs it;
-  - `axp22x-soft-battery gen-dts`: makes the mean model of `runs/` (as the
-    daemon does) and prints to stdout an overlay `.dts` with it, by D75:
-    `ocv-capacity-table-0` and `factory-internal-resistance-micro-ohms` on
-    `battery@0`, the capacities and `end-microvolt` on the cell, both by
-    `target-path` (a label of the overlay `clockworkpi-uconsole-cm5` is not
-    seen from another overlay, 0011); `dtc -@ -I dts -O dtb` makes the
-    `.dtbo`. The model as for the module, no `--run` (D81);
-  - `axp22x-soft-battery reset`: moves `runs/` to `archive/` (D47);
-  - the full paths of `battery@0` and of `battery-power-supply` in the live
-    tree are to be read once on the device (`/proc/device-tree`).
-- The package of the daemon (D79, D87): the unit `axp22x-soft-battery.service`,
-  `ExecStart=/usr/bin/axp22x-soft-battery daemon`, `WantedBy=multi-user.target`,
-  a preset `enable`; no rule of udev; no `Before=upower.service`, no
-  `Type=notify`.
+- How a run of a charge is kept: a file of its own in `runs/`, or a part of
+  the run of the discharge that follows.
+- With the defaults of upower (the critical action at 2 %), a run is broken
+  off before the silence (D97): whole runs then come only if the user sets
+  upower so, or by `import`.
 
-- Proposed on the review of 2026-11-12 (`discussion.md`, "What to make
-  simpler"): (1) the level always by the voltage (no count in the module,
-  no C', no five settings of C'); `charge_counter` out of the module, the
-  daemon counts (D89); (2) a run kept as a table of OCV; (3) a mode
-  `import` of the program for the logs of axp-log; (4) the daemon moves the
-  oldest run to `archive/`; `reset` may go.
+## Variant A, kept apart
 
-- To do for D91: a log of axp-log of a full charge, the device on, from
-  low to `Full`, to make the curve of the charge built in.
-
-- Q15, decided (D94). The error after the silence (D93): `-ENODATA`, not `-ENXIO`. In
-  `power_supply_sysfs.c` of `uconsole-7.3`: a read that fails with
-  `-ENODATA` is logged by `dev_dbg_ratelimited` (not seen by default), any
-  other error by `dev_err_ratelimited` ("driver failed to report ...", the
-  lines of the log of 08.11 from `axp20x-battery`), at each read of upower
-  and of the daemon; and a uevent skips a property with `-ENODATA`, but
-  with another error the whole uevent fails (`add_prop_uevent`). The
-  values to fail: `status`, `capacity`, `voltage_now`, `current_now`,
-  `power_now`, `energy_now`; the values of design stay.
-
-## Fixed on the review
-
-What did not agree, 2026-11-12, and how it stands now:
-
-- The event key: `UCONSOLE_BATTERY_EVENT` (a name before D26) in one place,
-  `UCONSOLE_SOFT_BATTERY_EVENT` in another; since D43 neither: the key of
-  the class, `POWER_SUPPLY_HEALTH=Dead`.
-- The uevent was said to carry the whole model (about 500 B) in two
-  places; "The interface" has the program read it from sysfs: the uevent
-  carries no model.
-- The work was said to read the ADC by the regmap; D36 takes it by IIO.
-- The step of the points: "each 50 mAh, about 180 points" in one place,
-  "`charge_full_design` / 256, 35 mAh" in another. With
-  `charge_full_design_uah=3337000` in `config.txt` of the device
-  (`uconsole-pi-firmware`), / 256 gives 13 mAh, and 512 points end at
-  6.7 Ah, before the end of cells of 9 Ah. Then a fixed 50 mAh; now 80
-  bins that merge when full (D44).
-- R "from dV/dI at steps" in "The model": D34 takes it from the step at
-  the start.
-- The run of 3.10 V at 1.9 A was named the run of 2026-11-08; it is the
-  run of 2026-10-24 (`hardware/notes/discharge-cm5.md`). D21 says the same
-  and is fixed.
-- "The values of C' and the step of R are parameters": the step of R is
-  gone (D34); the parameters are listed in "The interface".
-- dmesg: "four lines a cycle" and "`dev_*` of the device
-  `axp22x-soft-battery`" against "six lines" and the device of the cell:
-  six lines, the cell.
-- The start level: "means over 30-60 s" against 30 s of D23: 30 s.
-- "Open questions" still held the table of 21 points (D22), C' (D23) and
-  the end (D35): decided, out of the list.
-- Steps: the path of `battery-power-supply` and the edge 0x70 → 0x30 on
-  the device are no more needed (D36; the marker is a state).
-- The scheme of showcase reads the ADC by the AXP and 0x00 each second:
-  to be brought in line (step 2).
-- Not ours to fix, noted: `config.txt` of the device has
-  `charge_full_design_uah=3337000`; the cells gave 9067 mAh. With no model
-  the module takes 3337 mAh as `Q_full`, so the level with no model is
-  wrong until the first run, or until that line is set right.
+The module counts, learns (80 bins, R at the start, the model of a run)
+and works out the level by C'; the program runs twice a cycle: `load` at
+boot (the model into `model_*`, `model_commit`, by `IMPORT{program}` of a
+rule of udev) and `save` at the silence (by `RUN`). Its own decisions: D3,
+D13, D16, D19, D20, D23, D24, D27, D29-D31, D43 (`model_*`, `run_*`,
+`learn_*`), D44, D53, D74 (a model written). Not made now (D80); its full
+design is in the history of this file, before the commit "Rewrite the plan
+for variant B".
