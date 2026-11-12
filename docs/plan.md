@@ -294,7 +294,7 @@ gives about six lines.
 
 1. Read: the five writes of Rex (0x30, 0x32, 0x34, 0x36, 0x90) in the
    datasheet.
-2. Bring the scheme of showcase in line with D36 and D37.
+2. Done: the scheme of showcase is in line with D36, D37, D41, D43.
 3. The packages: the script of the copy (D28), the ebuilds; `linux-mod-r1`
    and `cargo` in the cross build of unidev.
 4. The module.
