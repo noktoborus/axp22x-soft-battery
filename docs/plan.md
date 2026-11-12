@@ -147,8 +147,9 @@ Proposed (Q4). Units of the power supply class: µV, µA, µAh, µWh; R in
 
 The properties (read by upower): `present`, `status` (above),
 `technology`, `capacity`, `capacity_level`, `voltage_now`, `current_now`
-(its sign as `Documentation/ABI/testing/sysfs-class-power` of 7.3 says, to
-read), `power_now`, `charge_full`, `charge_full_design`, `charge_now`,
+(negative in a discharge, as `axp20x_battery` gives it: upower takes a
+battery with `current_now` < 0 for discharging, `discussion.md`, "How
+upower tells full from charging"), `power_now`, `charge_full`, `charge_full_design`, `charge_now`,
 `energy_full`, `energy_full_design`, `energy_now`, `time_to_empty_now`,
 `time_to_full_now`, `voltage_min_design`, `voltage_max_design`,
 `constant_charge_current_max`, `scope` (System). How three of them are
@@ -234,7 +235,7 @@ gives about six lines.
 ## Steps
 
 1. Read: the five writes of Rex (0x30, 0x32, 0x34, 0x36, 0x90) in the
-   datasheet; the sign of `current_now` in the ABI of 7.3.
+   datasheet.
 2. Bring the scheme of showcase in line with D36 and D37.
 3. The packages: the script of the copy (D28), the ebuilds; `linux-mod-r1`
    and `cargo` in the cross build of unidev.
