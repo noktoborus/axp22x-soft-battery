@@ -1,4 +1,4 @@
-# uconsole-soft-battery
+# axp22x-soft-battery
 
 The battery of the uConsole with a CM5, counted in software ("soft"),
 not by the gauge of the PMIC: a kernel module that learns the

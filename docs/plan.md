@@ -16,7 +16,8 @@ is written for A, as decided until then; what B changes is listed here.
   bins, R at the start, the model of the run), works out the level; the
   program `uconsole-soft-battery` runs twice a cycle: `load` at boot by a
   rule of udev, `save` at the silence by a rule of udev; no service.
-- **B: the module and a daemon of learning.** The module reads, counts
+- **B: the module and a daemon of learning**, the daemon
+  `axp22x-soft-battery` (D62). The module reads, counts
   and works out the level by the model it holds (the default, D58-D60, or
   the one the daemon wrote); it does not learn. The daemon runs for good
   (a service), reads the files of sysfs each second, learns, keeps the
@@ -44,12 +45,13 @@ Only in B, proposed (`discussion.md`, "Variant B in full"):
   at resume. Out: the bins, R at the start, `run_*`, `learn_*`, the uevent
   of a run. New: `charge_counter` of the class, the net charge counted by
   the module since the probe, µAh, read only.
-- QB2. The daemon reads each 1 s `charge_counter`, `voltage_now`,
-  `current_now`, `status`, `health` of our battery. These are the copies of
-  the last sample of the module: no read of the bus. The charge of the
-  learning is the difference of `charge_counter`, so the daemon misses no
-  charge when its second and the second of the module are not in step;
-  the energy by V × I of its own samples.
+- QB2, decided (D63). The daemon reads each 1 s `charge_counter`,
+  `voltage_now`, `current_now`, `status`, `health` of our battery: the
+  copies of the last sample of the module, no read of the bus; the charge
+  of the learning is the difference of `charge_counter`; the energy by
+  V × I of its own samples. Not the drivers there are (IIO, `axp20x-ac`):
+  that would read the bus twice and lose bit 6 of 0x01 (`discussion.md`,
+  "The daemon with the least tie to the module").
 - QB3. Start: a rule of udev on `add` of our battery, `TAG+="systemd"`,
   `ENV{SYSTEMD_WANTS}="uconsole-soft-battery.service"`; the service
   `Restart=always`. At its start the daemon writes the mean model
@@ -351,7 +353,7 @@ gives about six lines.
   `online` of `axp20x-ac`; 12 errors in a row → `hw_protection_trigger()`;
   `system_freezable_wq`, no code of suspend; about 60 lines.
 - Put off: the module in the tree of the kernel,
-  `plans/uconsole-soft-battery-in-tree.md`.
+  `plans/axp22x-soft-battery-in-tree.md`.
 
 ### The default curve
 
@@ -417,7 +419,15 @@ not the curve.
 
 ## Open questions
 
-None.
+- Q9. The rest of the names after D62, proposed by one rule, `axp22x-`
+  for the AXP the module serves: the module `axp22x_soft_battery`; the
+  power supply `axp22x-soft-battery`; the package of the module
+  `sys-power/axp22x-soft-battery`; the package of user space
+  `sys-power/axp22x-soft-battery-tools` (A) or `-daemon` (B); the program
+  of A `axp22x-soft-battery` too; the state `/var/lib/axp22x-soft-battery/`;
+  the guard `axp22x_guard`; the file of modprobe
+  `axp22x-soft-battery.conf`.
+- QB1, QB3-QB6: variant B, in "Two variants".
 
 ## Fixed on the review
 
