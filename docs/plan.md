@@ -8,6 +8,14 @@ Not decided where it says "proposed".
 
 ### The module
 
+Open, proposed on 2026-11-12 (`discussion.md`, "On the drivers of the
+AXP"): the module binds to the cell `battery-power-supply` of the MFD in
+place of `axp20x_battery` (blacklisted by the package), takes the ADC by
+the IIO channels of `axp20x_adc`, the registers 0x00, 0x01 by the regmap
+of the parent, the values of `battery@0` by `power_supply_get_battery_info`;
+no overlay, no node of its own, no line of `config.txt`. If taken, it
+changes D5 and D32 and the overlay of "The packages".
+
 - One power supply of type Battery, `uconsole-soft-battery`; its
   properties and its own attributes: "The interface" below.
 - The node `battery-power-supply` of the AXP is off (D5). The module sets
