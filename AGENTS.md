@@ -23,8 +23,8 @@ RULE linux = the research of the kernel: the series of the kernel, the
 RULE hardware = uconsole/hardware: the notes on the PMIC, the
      gauge, the discharge, the tool axp-log
 THEN a fact from there is cited by its path, not copied here
-RULE state : the module is written, not yet tried on the device; the
-     program is a skeleton; the design of variant B is in `docs/plan.md`
+RULE state : the module and the program are written, not yet tried on
+     the device; the design of variant B is in `docs/plan.md`
 REF  docs/plan.md
 
 ## Layout

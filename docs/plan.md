@@ -412,8 +412,8 @@ user.
    `level.c`, `work.c`, `props.c`, `sb.h`; built against
    the tree of `uconsole-7.3` (x86, `W=1`, no warning), not yet on the
    device.
-5. The program: `import` first (the three logs), then `gen-dts`, then
-   `daemon`.
+5. Done: the program (D117), `daemon/src/`; `import` of the three logs
+   and `gen-dts` tried here; `daemon` not yet on the device.
 6. The kernel series: 0010 out.
 7. A test on the device: the module with the overlay of the package; a
    model from the three logs by `import` and `gen-dts`; a full charge and a
