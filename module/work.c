@@ -22,6 +22,13 @@
 
 #define SB_GUARD_MS		20000
 
+/*
+ * After the charger comes or goes, the current and bit 6 of 0x01 take a
+ * moment to settle: five samples at 1 s follow the first one.
+ */
+#define SB_FAST_SAMPLES		5
+#define SB_FAST_MS		1000
+
 /* One sample of the ADC, in mV and mA. */
 struct sb_sample {
 	int v_mv;
@@ -34,15 +41,25 @@ struct sb_means {
 	int i_ua;
 };
 
+/* The next run: soon after a change of the charger, else at the period. */
 static void sb_schedule(struct sb *sb)
 {
-	queue_delayed_work(system_power_efficient_wq, &sb->work,
-			   round_jiffies_relative(msecs_to_jiffies(sb->interval_ms)));
+	unsigned long delay;
+
+	if (atomic_dec_if_positive(&sb->fast_left) >= 0)
+		delay = msecs_to_jiffies(SB_FAST_MS);
+	else
+		delay = round_jiffies_relative(msecs_to_jiffies(sb->interval_ms));
+	queue_delayed_work(system_power_efficient_wq, &sb->work, delay);
 }
 
-/* A run now, not at the end of the period: the charger came or went. */
+/*
+ * A run now, not at the end of the period, and a few more soon after it:
+ * the charger came or went, or the work starts.
+ */
 void sb_sample_now(struct sb *sb)
 {
+	atomic_set(&sb->fast_left, SB_FAST_SAMPLES);
 	mod_delayed_work(system_power_efficient_wq, &sb->work, 0);
 }
 
@@ -220,7 +237,7 @@ static void sb_take_sample(struct sb *sb, const struct sb_sample *s)
 	m = sb_add_mean(sb, supplied, s);
 	level = sb_hold_level(sb, supplied,
 			      sb_level(sb, status, supplied, m.v_uv, m.i_ua));
-	changed = sb_store(sb, status, level, s);
+	changed = sb_store(sb, status, level, s) || supplied != sb->prev_supplied;
 
 	sb_tell_events(sb, supplied, status, level, s, &m);
 	sb_remember(sb, supplied, status, level);

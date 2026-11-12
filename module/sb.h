@@ -14,6 +14,7 @@
 #ifndef SB_H
 #define SB_H
 
+#include <linux/atomic.h>
 #include <linux/mutex.h>
 #include <linux/power_supply.h>
 #include <linux/types.h>
@@ -81,6 +82,9 @@ struct sb {
 	bool prev_supplied;
 	int prev_status;
 	bool at_zero;
+
+	/* The samples left at a short period after the charger came or went. */
+	atomic_t fast_left;
 
 	/* The lock of snap, the one lock of the module. */
 	struct mutex lock;
