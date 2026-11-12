@@ -28,9 +28,11 @@ Not decided where it says "proposed".
   I2C client, then `dev_get_regmap()`.
 - The count: every 1 s, the charge and the energy (V × I × dt) by
   trapezoids. The charge is net: in minus out.
-- The marker of the full charge: the IRQ "charge done" (register 0x49,
-  bit 2), or bit 6 of 0x01 (charging) going to 0 with the external power
-  on. Which one the AXP228 gives is to check on the device.
+- The marker of the full charge. Proposed: in the read of each 1 s,
+  bit 6 of 0x01 (charging) goes from 1 to 0 while bit 7 of 0x00 (ACIN
+  present) is 1 and the voltage is 4.15 V or more; and the same state at
+  the probe counts as a marker. No IRQ. (`discussion.md`, "The end of the
+  charge".)
 - The end: the AXP does not answer on I2C, some reads in a row.
 - States of the learning: `idle` → `learning` at each end of a full
   charge (D14); `learning` counts; a new end of a charge starts it again;
@@ -230,7 +232,8 @@ sum is old. The version stays until a first release. A tarball of a tag
 1. On the device:
    - the full path of `battery-power-supply`:
      `find /proc/device-tree -name 'battery-power-supply*'`;
-   - the end of a charge by `axp-log`: the IRQ 0x49 bit 2 and 0x01 bit 6;
+   - the end of a charge by `axp-log`: 0x01 from 0x70 to 0x30, the
+     current, the voltage at that moment;
    - the writes of Rex (0x30, 0x32, 0x34, 0x36, 0x90): their meaning in
      the datasheet.
 2. The scheme of the states and threads: a `.scheme` on a desk of
@@ -275,4 +278,5 @@ sum is old. The version stays until a first release. A tarball of a tag
   - C': the means of V and I over 30 s, as D23; the weight of the voltage
     from 50 % (0) to 20 % (full), in place of 30 % and 10 %; f in 0.5..2,
     as D23.
-- Which register of the AXP228 marks the end of the charge.
+- The end of a charge on the device: a log of `axp-log` on the charger
+  through the end of a charge, to see 0x01 go from 0x70 to 0x30.
