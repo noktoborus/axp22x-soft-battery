@@ -157,9 +157,9 @@ its values; they are not in dmesg.
   - the AXP silent and a model: it keeps the run in
     `/var/lib/uconsole-soft-battery/runs/<date>.env`, makes the mean
     model of the runs (D29) and writes it into the state file
-    `/var/lib/uconsole-soft-battery/model.env` (the attributes `model_*`, as
-    they are), `fsync` of the file and of its directory, then a forced
-    power off.
+    `/var/lib/uconsole-soft-battery/model.env`, in the keys of the
+    attributes `model_*`; `fsync` of both files and of their directories,
+    then a forced power off.
 - It runs only at that event: no daemon, no write to the disk during the
   learning (D16, D20).
 - Proposed: the forced power off is `systemctl poweroff --force`: no stop
