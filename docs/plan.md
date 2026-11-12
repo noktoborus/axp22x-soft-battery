@@ -65,8 +65,8 @@ scheme: desk `uconsole-soft-battery-work` of showcase,
      charger is in and the current of the charge under 100 mA (D40);
   2. under our mutex: the count, the state of the learning, the point, R
      at the 60th second, the level; it notes what changed;
-  3. out of the mutex: `power_supply_changed()` if `status`, the integer
-     percent or `capacity_level` changed; the lines of dmesg; at the
+  3. out of the mutex: `power_supply_changed()` if `status` or the integer
+     percent changed (D55); the lines of dmesg; at the
      silence the uevent (D19), and the work is not queued again (D41);
   4. queue the next run.
 - `external_power_changed()` (the work of the class, at an IRQ of
@@ -179,14 +179,16 @@ power supply class: µV, µA, µAh, µWh, µΩ.
 
 The properties of the class (read by upower and by anyone):
 `present`, `status` (D40), `health` (`Good`; `Dead` at the silence),
-`technology`, `capacity`, `capacity_level`, `voltage_now`, `current_now`
-(negative in a discharge), `power_now`, `charge_full` (`Q_full` of the
-model in use), `charge_full_design` (`battery@0`), `charge_now`,
-`energy_full`, `energy_full_design`, `energy_now`, `internal_resistance`
-(R of the model in use; a property of the class since 2025),
-`time_to_empty_now`, `time_to_full_now`, `voltage_min_design`,
-`voltage_max_design`, `constant_charge_current_max`, `scope` (System).
-How three of them are worked out: Q7.
+`technology`, `capacity`, `voltage_now`, `current_now` (negative in a
+discharge), `power_now` (V × I of the last sample, the sign of
+`current_now`, D55), `charge_full` (`Q_full` of the model in use),
+`charge_full_design` (`battery@0`), `charge_now` (the level × `Q_full`),
+`energy_full`, `energy_full_design`, `energy_now` (the level × `E_full`),
+`internal_resistance` (R of the model in use; a property of the class
+since 2025), `voltage_min_design`, `voltage_max_design`,
+`constant_charge_current_max`, `scope` (System). No `time_to_empty_now`,
+`time_to_full_now`, `capacity_level` (D55): upower works the times out
+itself, and reads `capacity_level` only at `capacity` = 0.
 
 Its own attributes (`attr_grp`), one value or one list of one type per
 file (`Documentation/filesystems/sysfs.rst`):
@@ -303,13 +305,8 @@ gives about six lines.
 
 ## Open questions
 
-- Q7. The values for upower, proposed (`discussion.md`, "Q7: what upower
-  reads"): `power_now` = V × I of the last sample, the sign of
-  `current_now`; `energy_now` = level × `E_full`, `charge_now` = level ×
-  `Q_full`; no `time_to_empty_now`, `time_to_full_now`, `capacity_level`
-  (upower does not read the first two, and the third only at `capacity`
-  = 0); `power_supply_changed()` then at a change of `status` or of the
-  integer percent (D42 without `capacity_level`).
+None. The design is closed on 2026-11-12; what is left are the steps
+above.
 
 ## Fixed on the review
 

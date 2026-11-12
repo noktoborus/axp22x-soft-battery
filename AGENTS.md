@@ -22,7 +22,8 @@ RULE linux = the research of the kernel: the series of the kernel, the
 RULE hardware = uconsole/hardware: the notes on the PMIC, the
      gauge, the discharge, the tool axp-log
 THEN a fact from there is cited by its path, not copied here
-RULE state : no code yet; the design is in work
+RULE state : no code yet; the design is closed (`docs/plan.md`); the steps of
+     the work are next
 REF  docs/plan.md
 
 ## Layout
