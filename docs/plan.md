@@ -313,11 +313,26 @@ file (`Documentation/filesystems/sysfs.rst`):
 - The keys of the files of runs and of the output of `load`: the names of
   the attributes in capitals (`RUN_Q_FULL`, `MODEL_Q_FULL`); a run becomes
   a model by its prefix.
-- The parameters of the module, writable at run time (D24): `end_uv`
-  (3200000, D21), `r_uohm` (87000, D34), `full_margin_uv` (50000, D39),
-  `full_current_ua` (100000, D39), `r_step_min_ua` (300000, D34),
-  `silent_samples` (6, D41), and C' (D23): `mean_s` (30), `f_min_pct` (50),
-  `f_max_pct` (200), `weight_from_pct` (30), `weight_full_pct` (10).
+- The settings (D73): properties of the device tree with defaults, read
+  once at the probe; no parameters of the module. On the cell
+  `battery-power-supply`, prefix `axp22x-soft-battery,`:
+
+  | property | default | what |
+  |---|---|---|
+  | `sample-interval-ms` | 10000 | the period of the work (D70, D72) |
+  | `end-microvolt` | 3200000 | 0 % with no model (D21) |
+  | `full-margin-microvolt` | 50000 | the full state: `voltage-max-design` − this (D39) |
+  | `full-current-microamp` | 100000 | the full state: the current of the charge under this (D39) |
+  | `silent-samples` | 6 | failed samples to `health` = `Dead` (D41) |
+  | `guard-samples` | 12 | failed samples to `hw_protection_trigger()` (D71) |
+  | `mean-seconds` | 30 | the means of V and I (D23) |
+  | `f-min-percent`, `f-max-percent` | 50, 200 | the bounds of f (D23) |
+  | `weight-from-percent`, `weight-full-percent` | 30, 10 | the weight of the voltage (D23) |
+
+  On `battery@0`, the standard ones of `simple-battery`:
+  `factory-internal-resistance-micro-ohms` (R with no model; 87000) and
+  `ocv-capacity-table-0` (the curve with no model; the one built in, D59).
+  A change: the overlay and a boot.
 
 ### dmesg
 
@@ -454,7 +469,7 @@ not the curve.
 ## Open questions
 
 - QB1, QB4: variant B, in "Two variants".
-- Q11. The name of the property of D70, proposed
+- Q11, decided (D72, D73). The name of the property of D70, proposed
   `axp22x-soft-battery,sample-interval-ms` on the node
   `battery-power-supply` (the module reads it by
   `device_property_read_u32()` on its own device). To set it, the overlay of
