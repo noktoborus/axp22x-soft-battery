@@ -240,9 +240,9 @@ gives about six lines.
   (`discussion.md`, "The sandbox of udevd").
   - With no run: a forced power off (D19).
   - With a run: it checks it (proposed, Q6), keeps it as
-    `/var/lib/uconsole-soft-battery/runs/<seq>.env` (D29) or
-    `<seq>.invalid.env`, `fsync` of the file and of `runs/`, then a forced
-    power off. No mean here (D30).
+    `/var/lib/uconsole-soft-battery/runs/<seq>.env` (D29, D45), or, if it
+    fails the check, `invalid/<seq>.env` (D45); `fsync` of the file and of
+    its directory, then a forced power off. No mean here (D30).
   - Its lines go into `/dev/kmsg` (D27).
 - At boot: the rule on `add` of the power supply runs `uconsole-soft-battery
   load` by `IMPORT{program}` (D13, D30); `load` reads all runs each time
@@ -294,7 +294,7 @@ gives about six lines.
 
 - Q6. The program: the mean of the last 5 valid runs, no limit of age;
   the check of a run (`Q_full` in 30..200 % of the design, V of the table
-  falls with the charge out) and `<seq>.invalid.env`; `seq` in the name,
+  falls with the charge out; a run that fails goes to `invalid/`, D45); `seq` in the name,
   the date inside; `reset` moves `runs/` to `runs.<seq>/`; `load` by hand
   with a mode that writes the attributes; `systemctl poweroff --force`;
   `std` only.
