@@ -195,8 +195,13 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
 - A run of a discharge (D96):
   - the start: `status` was `Full` and is not now (D14); the values at rest
     are those of that last `Full` read;
-  - R at 60 s, by the 6 reads after the start (D34); 0 if the step is under
-    300 mA;
+  - R by the steps of the load, as `adc-battery-helper` of the kernel
+    (D104): at each read, R = |ΔV| / |ΔI| of it and the read before, when
+    |ΔI| ≥ 65 mA; not under 3.7 V, not when `status` changed between the
+    two (the start from `Full`, the charger in or out), not out of
+    2/3..4/3 of the mean of the last 8 taken; that mean starts at
+    `internal_resistance` of the module. R of the run: the mean of all the
+    steps taken; 0 when none;
   - the charge and the energy by trapezoids over `CLOCK_MONOTONIC` (D89);
     each read kept: the charge out, V, I;
   - the charger in during a run: the count goes on, net; `Full` again: the
@@ -233,7 +238,8 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
 The model of `discharge/full/` as it would be for the module (D81); with
 `--use-partial` the runs of `discharge/partial/` stopped at 10 % or under go into the
 means too, the others are skipped with a line (D99): the mean of the
-runs (each value, each point of the tables), `end-microvolt` = the highest
+runs (each value, each point of the tables; R of the runs with R not 0,
+none written when all are 0, D104), `end-microvolt` = the highest
 `V_end` + 50 mV (D35, D48), `ocv-capacity-celsius` = the mean temperature
 (D86); `end-microvolt` only of `discharge/full/`, none written if it is empty
 (3.2 V of D21 holds); an overlay `.dts` with `target-path` to `battery@0` and to the cell
