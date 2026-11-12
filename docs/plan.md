@@ -62,7 +62,7 @@ the daemon gives the module nothing (D87).
 4. The set up of the PMIC, all from the device tree (D5, D105): the current
    of the charge (`constant-charge-current-max-microamp`), `V_OFF` (0x31,
    `voltage-min-design-microvolt`), the voltage of the full charge
-   (`voltage-max-design-microvolt`) of the cells (D111); then each triple of
+   (`constant-charge-voltage-max-microvolt`, D112) of the cells (D111); then each triple of
    `axp22x-soft-battery,reg-writes` by `regmap_update_bits()`, in order.
 5. The power supply `axp22x-soft-battery`, `supplied_from = { "axp20x-ac" }`
    (D39); no attributes of its own (D87).
@@ -94,7 +94,7 @@ By the voltage always (D90), on two curves (D91):
 | state | the level |
 |---|---|
 | no charger | OCV ≈ V + I × R on the curve of the discharge |
-| the charger in, the voltage under `voltage-max-design` − `full-margin-microvolt` | OCV ≈ V − I × R on the curve of the discharge |
+| the charger in, the voltage under `constant-charge-voltage-max` − `full-margin-microvolt` | OCV ≈ V − I × R on the curve of the discharge |
 | the charger in, the voltage at that or over (the phase of constant voltage) | the current of the charge on the curve of the charge; with none, OCV ≈ V − I × R on the curve of the discharge (D102) |
 | the full state (D40) | 100 % |
 
@@ -131,7 +131,7 @@ By the voltage always (D90), on two curves (D91):
 - The charger in, the current of the charge `full-current-microamp` or
   more: `Charging`, no read of 0x01.
 - Under it: bit 6 of 0x01 = 1 → `Charging`; bit 6 = 0 and the voltage at
-  `voltage-max-design` − `full-margin-microvolt` or over → `Full` (the full
+  `constant-charge-voltage-max` − `full-margin-microvolt` or over → `Full` (the full
   state); bit 6 = 0 under it → `Not charging`.
 
 ### The properties (D43, D55, D92-D95)
@@ -224,7 +224,8 @@ are not read: the values of design are set again in the cells.
 | node | property | set by | value | what |
 |---|---|---|---|---|
 | the cells | `constant-charge-current-max-microamp` | the package | 2100000 | the current of the charge, 0x33 |
-| the cells | `voltage-max-design-microvolt` | the package | 4200000 | the voltage of the full charge, 0x33 |
+| the cells | `constant-charge-voltage-max-microvolt` | the package | 4200000 | the voltage of the full charge, 0x33; the full state (D112) |
+| the cells | `voltage-max-design-microvolt` | the package | 4200000 | `voltage_max_design` |
 | the cells | `voltage-min-design-microvolt` | the package | 2900000 | `V_OFF`, 0x31 |
 | the cells | `energy-full-design-microwatt-hours` | the package | 24790000 | `energy_full_design` |
 | the cells | `device-chemistry` | the package | `lithium-ion` | `technology` |
@@ -392,8 +393,8 @@ user.
 
 ## Steps
 
-1. Done: the writes of Rex in the datasheet. Left: where GPIO0 of the AXP
-   goes (the schematic). The overlays target `/` only (D111); the paths
+1. Done: the writes of Rex in the datasheet; the write of GPIO0 stays
+   as Rex has it, where GPIO0 goes is not looked for (D113). The overlays target `/` only (D111); the paths
    of the nodes of the PMIC are not needed.
 2. Done: the scheme of B on the desk of showcase,
    `shots/3-variant-b.scheme`.

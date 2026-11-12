@@ -52,6 +52,8 @@
 				device-chemistry = "lithium-ion";
 				constant-charge-current-max-microamp = <2100000>;
 				voltage-max-design-microvolt = <4200000>;
+				/* the target of the charge, 0x33, and the full state */
+				constant-charge-voltage-max-microvolt = <4200000>;
 				voltage-min-design-microvolt = <2900000>;
 				energy-full-design-microwatt-hours = <24790000>;
 				/* The mean of the three logs to the silence, R 87 mOhm
