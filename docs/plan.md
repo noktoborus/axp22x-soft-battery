@@ -101,6 +101,20 @@ By the voltage always (D90), on two curves (D91):
   phase of constant voltage then takes the curve of the discharge, the level
   does not fall, and `Full` sets 100 % (D91, D102). By the logs of a charge
   that phase then shows 7-14 % low until `Full`.
+- The form of the curve of the charge (D110): pairs `<µA percent>`, 1 to
+  16; the current falls strictly, the percent rises strictly, 0-100. The
+  current over the first pair: the curve of the discharge, OCV ≈ V − I × R
+  (D102); between two pairs: a line between them; under the last pair: its
+  percent until `Full`, then 100 %. The check at the probe: an even count
+  of cells, 2 to 32, the order above; a bad one fails the probe (D106).
+  For example (the numbers made up; no log of a charge reaches the phase
+  of constant voltage):
+
+  ```dts
+  axp22x-soft-battery,charge-cv-table =
+  	<1310000 86>, <1150000 88>, <1000000 90>, <860000 92>,
+  	<720000 94>,  <580000 96>,  <430000 98>,  <120000 100>;
+  ```
 
 ### status (D40)
 
@@ -287,8 +301,12 @@ holds it:
 - `axp22x-soft-battery,end-microvolt`: the highest `V_end` of
   `discharge/full/` + 50 mV (D35, D48); never of `partial/`, which has no
   `V_end`;
-- the curve of the charge: the mean of the runs of `charge/full/`;
-  `axp22x-soft-battery,charge-cv-table` on the cell.
+- the curve of the charge: the mean of the runs of `charge/full/` on a
+  grid of the percent, a step of 2 %, from the start of the phase of
+  constant voltage to 100 %; the percent of a point of a run is counted
+  back from `Full`, 100 − (the charge in after it) / `Q_full`; at each step
+  of the grid the current of each run, then the mean of the runs; at most
+  16 pairs (D110); `axp22x-soft-battery,charge-cv-table` on the cell.
 
 With nothing worked out, a line and the exit code 1. Not written ever:
 the settings of the work and `reg-writes`. An overlay `.dts` with
