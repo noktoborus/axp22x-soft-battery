@@ -129,13 +129,16 @@ its values; they are not in dmesg.
 ### User space
 
 - A rule of udev on the uevent `axp_silent`: `RUN+="/usr/bin/systemctl
-  start --no-block uconsole-battery-save.service"`, with the keys of the
-  event passed to it; udev kills a long `RUN`.
+  start --no-block uconsole-battery-save.service"`; udev kills a long
+  `RUN`. A service started so does not get the keys of the event: the
+  program reads the same values from sysfs. At `done` the module puts the
+  new model into its attributes `model_*`, the ones the rule of D13
+  writes at boot, and sets `learn_state` to `done`.
 - The program takes two events (D19):
   - the AXP silent: a forced power off;
   - the AXP silent and a model: it writes the model into the state file
-    `/var/lib/uconsole-battery/model.env` (the keys of the event, as they
-    are), syncs, then a forced power off.
+    `/var/lib/uconsole-battery/model.env` (the attributes `model_*`, as
+    they are), syncs, then a forced power off.
 - It runs only at that event: no daemon, no write to the disk during the
   learning (D16, D20).
 - Proposed: the forced power off is `systemctl poweroff --force`: no stop
