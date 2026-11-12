@@ -71,12 +71,23 @@ Not decided where it says "proposed".
   --no-block uconsole-battery-save.service"`; udev kills a long `RUN`.
 - The service, oneshot: it saves the model into `/var/lib/uconsole-battery/`,
   then `OnSuccess=poweroff.target`.
-- Proposed: the model reaches the module at boot as options of modprobe,
-  `/etc/modprobe.d/uconsole-battery-model.conf`, written by the program
-  (`q_full=`, `e_full=`, `r_int=`, `v_end=`, `ocv=` an array of 21
-  points). The module is `=m` and modprobe loads it, so the model is
-  there at the probe. Other ways: `request_firmware()` by a link from
-  `/lib/firmware`; a write into sysfs by a rule of udev.
+- The model reaches the module at boot by a rule of udev (D13), on the
+  event `add` of the power supply:
+  ```
+  ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="uconsole-battery", \
+    IMPORT{file}="/var/lib/uconsole-battery/model.env", \
+    ATTR{model_q_full}="$env{Q_FULL}", ATTR{model_ocv}="$env{OCV}", ...
+  ```
+  `IMPORT{file}` reads lines `KEY=value`; `ATTR{}` writes them into the
+  attributes of the device. The module adds its attributes to the power
+  supply by `attr_grp` of `power_supply_config`. The program of the save
+  writes `model.env`. It works for `=m` and `=y`: for a module built in
+  the event comes before udev, and the coldplug of
+  `systemd-udev-trigger` gives it again. Until the write the module goes
+  by the default model (some seconds with `=y`). A new model makes the
+  module work out the start level by the voltage again.
+- The file is read at the event: `/var` is to be mounted then; one root
+  partition gives that.
 - Proposed: the points of the learning reach the disk by a uevent each
   50 mAh and a rule of udev (D9). A clean power off writes a mark and the
   charge. At boot: no mark and the last point near the end (below 3.3 V)
@@ -117,9 +128,6 @@ Not decided where it says "proposed".
 
 ## Open questions
 
-- How the model reaches the module at boot: options of modprobe
-  (proposed; only for `=m`, which a package of its own always is),
-  `request_firmware()`, a write into sysfs (works for `=y` too).
 - Is the learning started by hand (`learn=1`), or does it run on each
   cycle?
 - 0 %: the end of the learned run (proposed), or the point where
