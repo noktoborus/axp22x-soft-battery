@@ -537,24 +537,6 @@ not the curve.
   a preset `enable`; no rule of udev; no `Before=upower.service`, no
   `Type=notify`.
 
-- Q14. No daemon: a short program run by udev at each uevent of our
-  battery (`discussion.md`, "No daemon: a program at each uevent"),
-  proposed:
-  - the module: `voltage_avg`, `current_avg` (the means of 30 s it has for
-    C', properties of the class); `power_supply_changed()` at `status`, the
-    integer percent, `health` (as now) and once 60 s after a change of
-    `status` (for R);
-  - the rule: `ACTION=="change", SUBSYSTEM=="power_supply",
-    KERNEL=="axp22x-soft-battery", RUN+="/usr/bin/axp22x-soft-battery
-    event"`; the program reads the keys `POWER_SUPPLY_*` of the event, no
-    sysfs;
-  - the run so far in `/run/axp22x-soft-battery/` (tmpfs under systemd; `/tmp`
-    is not sure to be tmpfs on the image); at `Dead` the run to
-    `/var/lib/axp22x-soft-battery/runs/` or `invalid/`, then the power off;
-  - suspend by the two clocks kept in the file of `/run`; the lines into
-    `/dev/kmsg` (as D27);
-  - gone: the daemon, its service and preset (D65, D67-D69, D79).
-
 ## Fixed on the review
 
 What did not agree, 2026-11-12, and how it stands now:
