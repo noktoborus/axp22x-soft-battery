@@ -273,7 +273,10 @@ gives about six lines.
   (`linux_chkconfig_builtin`); the source has `#if
   IS_BUILTIN(CONFIG_BATTERY_AXP20X)` and `#error`.
 - The program: `sys-power/uconsole-soft-battery-tools` (D26), `cargo`; the
-  program and both rules of udev. Proposed (Q6): no crate, `std` only.
+  program and both rules of udev. Crates and fat LTO (D50): the ebuild
+  takes the crates from crates.io by `CRATES` (`cargo_crate_uris`), each
+  with its line in `Manifest`; that `lto = "fat"` of `Cargo.toml` holds
+  under the `cargo` eclass is to see in the log of the build.
 - Put off: the module in the tree of the kernel,
   `plans/uconsole-soft-battery-in-tree.md`.
 
@@ -293,22 +296,28 @@ gives about six lines.
 ## Open questions
 
 - Q6. The program:
-  - the files (D45, D46, D47):
-    ```
-    /var/lib/uconsole-soft-battery/
-    ├── runs/      the last 5 valid runs: the mean (D29)
-    ├── archive/   the valid runs set aside, by age or by a reset
-    └── invalid/   the runs that failed the check
-    ```
-    `load` moves from `runs/` to `archive/` all but the last 5 (at boot);
-    `reset` moves all of `runs/` to `archive/`. The highest `V_end` (D35)
-    is of `runs/` only (D48);
-  - the mean of the last 5 valid runs, no limit of age;
-  - the check of a run (`Q_full` in 30..200 % of the design, V of the table
-    falls with the charge out); `seq` in the name, the date inside;
-  - `load` by hand with a mode that writes the attributes;
-  - `systemctl poweroff --force`;
-  - `std` only.
+  - the files (D45-D48): `runs/` (the last 5, the mean, the highest
+    `V_end`), `archive/` (set aside by age by `load`, or by `reset`),
+    `invalid/`;
+  - the check of a run before `runs/`, proposed: the checks of
+    `model_commit` (D43): the lists of one length, the voltage falls along
+    the table, `Q_full` 0.5-50 Ah, R 10-500 mΩ or 0 (not learned, D34),
+    `V_end` 2.9-3.8 V. Not "30-200 % of `charge_full_design`": a wrong value
+    of the device tree would throw good runs away. A run that passes is
+    sure to pass `model_commit` as a part of the mean;
+  - `seq`, proposed: 1 + the highest `seq` in the names of `runs/`,
+    `archive/`, `invalid/`, at `save`; 6 digits, `000001.env`; no file of a
+    counter (D31);
+  - `load --apply`, proposed: the same lines as `load`, written by the
+    program itself into `model_*` of
+    `/sys/class/power_supply/uconsole-soft-battery/`, then `model_commit` =
+    `1`; for a change of `runs/` with no boot. With no valid run it writes
+    `default` into `model_commit`: the module takes its default model
+    again (a word `model_commit` is to take besides `1`, D43);
+  - the crates (D50), proposed: `anyhow` (errors), `lexopt` (the
+    commands); the rest by `std`: the files, `fsync` of a file and of a
+    directory (`File::sync_all`), `/dev/kmsg`, `systemctl`;
+    `[profile.release]` `lto = "fat"`, `codegen-units = 1`.
 - Q7. Three properties: `power_now` = V × I (without it upower shows no
   time, "What does patch 0002 do"); `time_to_empty_now` by the mean
   current of 60 s; `capacity_level` `Critical` under 5 %, `Low` under

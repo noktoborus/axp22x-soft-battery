@@ -53,3 +53,5 @@ not answered yet is in `plan.md`, "Open questions".
 | D46 | 2026-11-12 | user | A third directory keeps the valid runs set aside: by a `reset`, or by age (more than the 5 of the mean in `runs/`). Its name and how D35 (the highest `V_end` since the last `reset`) reads it: `plan.md`, Q6. |
 | D47 | 2026-11-12 | user | No mark of a reset: the runs set aside by age and by a `reset` both go into `archive/`, as they are. |
 | D48 | 2026-11-12 | user | The highest `V_end` (D35) is taken of the runs in `runs/` only, the last 5. A `reset` clears it (3.2 V of D21 until the next run); a heavy run set aside by age no longer counts. Changes D35 ("since the last `reset`"). |
+| D49 | 2026-11-12 | user | The forced power off is `systemctl poweroff --force`. |
+| D50 | 2026-11-12 | user | The program may take the crates that fit; it is built with fat LTO (`[profile.release]`, `lto = "fat"`). Replaces "`std` only". |
