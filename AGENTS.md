@@ -23,9 +23,8 @@ RULE linux = the research of the kernel: the series of the kernel, the
 RULE hardware = uconsole/hardware: the notes on the PMIC, the
      gauge, the discharge, the tool axp-log
 THEN a fact from there is cited by its path, not copied here
-RULE state : the packages and skeletons of the code are made; the module
-     and the program do no work yet; the design of variant B is in
-     `docs/plan.md`
+RULE state : the module is written, not yet tried on the device; the
+     program is a skeleton; the design of variant B is in `docs/plan.md`
 REF  docs/plan.md
 
 ## Layout
@@ -68,7 +67,7 @@ EXC  the guard of the silence: at 12 failed samples in a row the module
 RULE module.impact : the module weighs as little as it can on the running
      system: as few locks as it can, the interfaces of the drivers there
      are before a read of its own
-EX-  a read of 0x00 each second for the charger, when `axp20x-ac` tells it
+EX-  a read of 0x00 each second for the charger, when `axp22x-ac` tells it
      by its IRQ
 RULE module.small : the module is small and easy to read
 RULE module.poweroff : the module does not power the system off; user

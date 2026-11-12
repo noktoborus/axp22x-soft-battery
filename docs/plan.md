@@ -64,7 +64,11 @@ the daemon gives the module nothing (D87).
    `voltage-min-design-microvolt`), the voltage of the full charge
    (`constant-charge-voltage-max-microvolt`, D112) of the cells (D111); then each triple of
    `axp22x-soft-battery,reg-writes` by `regmap_update_bits()`, in order.
-5. The power supply `axp22x-soft-battery`, `supplied_from = { "axp20x-ac" }`
+5. The power supply `axp22x-soft-battery`, `supplied_from = { "axp22x-ac" }`
+   (the name `axp20x_ac_power.c` gives the AC of the AXP221, D114). Steps 2-4
+   run in `init` of the power supply: after the core read
+   `monitored-battery`, before the device is added; a bad value fails the
+   registration (D114)
    (D39); no attributes of its own (D87).
 6. The charger by `power_supply_am_i_supplied()`; the first run of the
    work.
@@ -80,7 +84,8 @@ the daemon gives the module nothing (D87).
   (3 samples), the level, `status`, the count of failed samples; then, out
   of the mutex, `power_supply_changed()` if `status` or the integer percent
   changed (D55), and the lines of dmesg.
-- The charger in or out: `external_power_changed()` from `axp20x-ac`
+- The charger in or out: `external_power_changed()` from `axp22x-ac`, a
+  run of the work at once
   (D39); one read of `online` by that driver at each edge.
 - `get_property`: a copy of the last sample under the mutex; no read of the
   bus (D42).
@@ -403,7 +408,9 @@ user.
    `linux-mod-r1` and `cargo` in the cross build of unidev (no docker
    here; the module not compiled yet: this container has no flex and no
    bison for the tree of the kernel).
-4. The module.
+4. Done: the module (D114), `module/axp22x_soft_battery.c`; built against
+   the tree of `uconsole-7.3` (x86, `W=1`, no warning), not yet on the
+   device.
 5. The program: `import` first (the three logs), then `gen-dts`, then
    `daemon`.
 6. The kernel series: 0010 out.
