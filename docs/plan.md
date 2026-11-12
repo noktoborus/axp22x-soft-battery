@@ -305,17 +305,21 @@ gives about six lines.
     `V_end` from `voltage-min-design` of `battery@0` (`V_OFF`, D51) to 3.8 V. Not "30-200 % of `charge_full_design`": a wrong value
     of the device tree would throw good runs away. A run that passes is
     sure to pass `model_commit` as a part of the mean;
-  - `seq`, proposed: 1 + the highest `seq` in the names of `runs/`,
+  - `seq` (D52): 1 + the highest `seq` in the names of `runs/`,
     `archive/`, `invalid/`, at `save`; 6 digits, `000001.env`; no file of a
-    counter (D31);
-  - `load --apply`, proposed: the same lines as `load`, written by the
+    counter;
+  - `load --apply` (D53): the same lines as `load`, written by the
     program itself into `model_*` of
     `/sys/class/power_supply/uconsole-soft-battery/`, then `model_commit` =
     `1`; for a change of `runs/` with no boot. With no valid run it writes
     `default` into `model_commit`: the module takes its default model
     again (a word `model_commit` is to take besides `1`, D43);
-  - the crates (D50), proposed: `anyhow` (errors), `lexopt` (the
-    commands); the rest by `std`: the files, `fsync` of a file and of a
+  - the crates (D50), proposed: `lexopt` (the commands) only. Errors by
+    `std`: `Result<T, Box<dyn std::error::Error>>`; `?` takes the errors of
+    `std` as they are, a message of our own is `format!(...).into()`, the
+    path of a file added by `map_err`; `main` writes the error into
+    `/dev/kmsg` and to stderr and returns `ExitCode::FAILURE`. The rest by
+    `std`: the files, `fsync` of a file and of a
     directory (`File::sync_all`), `/dev/kmsg`, `systemctl`;
     `[profile.release]` `lto = "fat"`, `codegen-units = 1`.
 - Q7. Three properties: `power_now` = V × I (without it upower shows no

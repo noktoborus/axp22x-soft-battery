@@ -56,3 +56,5 @@ not answered yet is in `plan.md`, "Open questions".
 | D49 | 2026-11-12 | user | The forced power off is `systemctl poweroff --force`. |
 | D50 | 2026-11-12 | user | The program may take the crates that fit; it is built with fat LTO (`[profile.release]`, `lto = "fat"`). Replaces "`std` only". |
 | D51 | 2026-11-12 | user | The lower bound of `V_end` in the checks (of `model_commit` and of a run) is not 2.9 V but `voltage-min-design` of `battery@0`, the value the module sets as `V_OFF` of the AXP: `V_end` may be under 2.9 V, never under that. |
+| D52 | 2026-11-12 | user | `seq` of a run: at `save`, 1 + the highest number among the names in `runs/`, `archive/`, `invalid/`; six digits, `000001.env`; no file of a counter. |
+| D53 | 2026-11-12 | user | `uconsole-soft-battery load --apply` writes the mean model into `model_*` of `/sys/class/power_supply/uconsole-soft-battery/`, then `1` into `model_commit`; with no valid run it writes `default` into `model_commit`, and the module takes its default model again. |
