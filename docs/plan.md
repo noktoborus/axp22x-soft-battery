@@ -27,7 +27,8 @@ Not decided where it says "proposed".
   trapezoids. The charge is net: in minus out.
 - The marker of the full charge. Proposed: the full state, not its
   edge: in the read of each 1 s, bit 7 of 0x00 (ACIN present) is 1, bit 6
-  of 0x01 (charging) is 0, the voltage is 4.15 V or more. Each sample in
+  of 0x01 (charging) is 0, the voltage is `voltage-max-design` of
+  `battery@0` − 50 mV or more (4.15 V for 4.2 V). Each sample in
   that state starts the learning again, so the learning starts in fact
   at the last full sample before the charger goes out; a probe in that
   state needs nothing more. The three logs that start full show it:
