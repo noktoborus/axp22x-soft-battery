@@ -245,9 +245,18 @@ sum is old. The version stays until a first release. A tarball of a tag
   off. To check on the device: a missing file of `include` does not stop
   the boot; a section in the included file. Else: a USE flag of
   `uconsole-pi-firmware`.
-- The mean model (D29): proposed, all runs kept (about 500 B each), the
-  mean of the last 5, N an option of the program; each value, and the
-  pairs (V, I) of the table as pairs.
+- The mean model (D29). Worked out in `discussion.md`, "The mean
+  model". Proposed:
+  - all runs kept, `runs/<seq>-<date>.env`, ordered by the number `seq`,
+    not by the date (the clock may be wrong at boot);
+  - the mean of the last 5 runs that are no older than 60 days; the last
+    run always counts; N and the age are options of the program;
+  - a plain mean: each value; each point of the table (one per 5 % of
+    the run's own `Q_full`) as a pair (V, I);
+  - a run that is not sane is kept with a mark and does not count:
+    `Q_full` under 30 % or over 200 % of the design, a table where V
+    rises with the charge out; a line into `/dev/kmsg` says so;
+  - `reset` moves `runs/` to `runs.<date>/` and deletes `model.env`.
 - The values of the model: the step of the current for `R` (200 mA), the
   21 points of the table.
 - Which register of the AXP228 marks the end of the charge.
