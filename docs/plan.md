@@ -38,13 +38,36 @@ module), `run_*` of D43.
 
 Only in B, proposed (`discussion.md`, "Variant B in full"):
 
-- QB1. The module in B: the set up of the PMIC; the reads of IIO each 1 s;
-  `status` (D40); the count of the charge; the level (D23, D35, D58-D60) by
-  the model in use; the model (`model_*`, `model_commit`, `model_source`,
-  D43); `health` = `Dead` at the silence; suspend: the level by the voltage
-  at resume. Out: the bins, R at the start, `run_*`, `learn_*`, the uevent
-  of a run. New: `charge_counter` of the class, the net charge counted by
-  the module since the probe, µAh, read only.
+- QB1. The module in B, proposed in full (`discussion.md`, "QB1: the
+  module of B in full"):
+  - probe: the IIO channels (`-EPROBE_DEFER`); `battery@0`; the set up of
+    the PMIC (D5, the writes of Rex); `ocv-capacity-table-0` or the curve
+    built in (D59); the power supply (`supplied_from = "axp20x-ac"`,
+    `attr_grp`); the charger; the first run.
+  - each 1 s (D42): three reads of IIO; 0x01 on the charger under 100 mA
+    (D40); under the mutex: `charge_counter` += I × dt; the level; the
+    silence count (D41).
+  - the level, two ways by the model in use: with no model (`default`) by
+    the voltage alone on the curve (D58-D60), no count; with a model
+    (`loaded`) the count and C' (D23), the end by `V_thr` (D35), the start by
+    the voltage on the table of the model (D22).
+  - `status` (D40); `health`: `Good`, `Dead` at the silence.
+  - the attributes: `model_*` (the draft), `model_commit` (`1`, or
+    `default` to go back to the default, D53), `model_source`. Gone: `run_*`,
+    `learn_state`, `learn_charge`.
+  - the properties of the class (D43, D55) and `charge_counter` (D63).
+  - suspend: the work cancelled; at resume the time set to now, the level
+    by the voltage again; nothing of a learning to drop.
+  - dmesg: the lines of the module only (bound, no model, model taken or
+    refused, the start level, the full state, 0 % by the voltage, the AXP
+    silent, a read failed, suspend and resume, removed); the lines of the
+    learning are the daemon's, in the journal (D67).
+  - the parameters: `end_uv`, `r_uohm`, `full_margin_uv`, `full_current_ua`,
+    `silent_samples`, the five of C'. Gone: `r_step_min_ua` (R is learned by
+    the daemon).
+  - the memory: the model in use and the draft (2 × about 104 B), the
+    count, the sums of 30 s, the default curve (84 B, `const`): about
+    0.3 KiB. No bins (D44 is of A).
 - QB2, decided (D63). The daemon reads each 1 s `charge_counter`,
   `voltage_now`, `current_now`, `status`, `health` of our battery: the
   copies of the last sample of the module, no read of the bus; the charge
