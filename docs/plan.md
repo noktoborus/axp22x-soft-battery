@@ -114,9 +114,9 @@ Only in B, proposed (`discussion.md`, "Variant B in full"):
   - the temperature of the PMIC (D85): once a minute from
     `/sys/class/hwmon/hwmon*/` with `name` = `axp_hwmon`, `temp1_input`
     (m°C); in the file of the run `RUN_TEMP_MEAN`, `RUN_TEMP_MIN`,
-    `RUN_TEMP_MAX`; not a part of the model. Proposed: `gen-dts` writes
+    `RUN_TEMP_MAX`; not a part of the model. `gen-dts` writes
     `ocv-capacity-celsius` as the mean temperature of the runs it takes
-    (the binding asks a temperature for each table).
+    (D86).
 - QB5, decided (D66, D69): a growth of `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`
   drops the learning (D33), and the daemon exits (exit code 0; no
   `Restart=`). After that, in the same boot: no learning of a later full

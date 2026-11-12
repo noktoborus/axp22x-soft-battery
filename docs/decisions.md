@@ -90,3 +90,4 @@ not answered yet is in `plan.md`, "Open questions".
 | D83 | 2026-11-12 | user | The service of the daemon is `Type=notify`: `READY=1` once the model is in the module, or at once when there is no model or no module yet; upower starts after it. |
 | D84 | 2026-11-12 | user | The daemon reads only from our module (D63), `charge_counter` kept; no read of other drivers, the temperature of the PMIC not read. Exception by D85: the temperature of the PMIC from hwmon, once a minute. |
 | D85 | 2026-11-12 | user | The daemon records the temperature of the PMIC in each run: from the hwmon `axp_hwmon` (`temp1_input`, patch 0011), found by its `name`; once a minute; the mean, the least and the most of the run in its file. An exception to D84 (reads of our module only). |
+| D86 | 2026-11-12 | user | `gen-dts` writes `ocv-capacity-celsius` as the mean temperature of the PMIC of the runs it takes (D85), in whole °C. |
