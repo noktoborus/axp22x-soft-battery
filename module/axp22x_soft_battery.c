@@ -13,7 +13,7 @@
 
 /* axp20x_battery built in binds first; the blacklist cannot stop it (D36) */
 #if IS_BUILTIN(CONFIG_BATTERY_AXP20X)
-#error "CONFIG_BATTERY_AXP20X=y: axp20x_battery must be a module"
+#error "CONFIG_BATTERY_AXP20X=y: axp20x_battery must be a module (m) or off (n)"
 #endif
 
 static int axp22x_soft_battery_probe(struct platform_device *pdev)
