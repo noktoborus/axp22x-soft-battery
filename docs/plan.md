@@ -7,6 +7,41 @@ number of its question in "Open questions" (Qn).
 Read again on 2026-11-12 against all decisions and answers; what did not
 agree is listed at the end, "Fixed on the review".
 
+## Two variants
+
+From 2026-11-12 the plan splits into two variants (D61). The design below
+is written for A, as decided until then; what B changes is listed here.
+
+- **A: the module and the tools.** The module reads, counts, learns (the
+  bins, R at the start, the model of the run), works out the level; the
+  program `uconsole-soft-battery` runs twice a cycle: `load` at boot by a
+  rule of udev, `save` at the silence by a rule of udev; no service.
+- **B: the module and a daemon of learning.** The module reads, counts
+  and works out the level by the model it holds (the default, D58-D60, or
+  the one the daemon wrote); it does not learn. The daemon runs for good
+  (a service), reads the files of sysfs each second, learns, keeps the
+  runs, makes the mean model and writes it at its start and after a run,
+  sees the silence and powers off.
+
+Common to both: D1, D2 (who learns differs), D5/D36, D6, D8, D10-D12,
+D14, D15 (the lines of learning come from the module in A, from the
+daemon in B), D17, D18, D21-D23, D25, D26, D28, D29, D32, D33 (in B the
+daemon drops its learning at a suspend), D34 (in B the daemon learns R),
+D35, D37-D41, D45-D55, D57-D60.
+
+Only in A: D3, D13 and D30-D31 (the model by a rule of udev at boot), D16
+(the learning in the memory of the module), D19 (the uevent of the silence
+starts the program), D20 (the module makes the model of the run), D24
+(the learning in the module), D27 (no service), D44 (the bins in the
+module), `run_*` of D43.
+
+Only in B, not decided yet: the daemon as a service (`Restart=always`); the
+learning, the bins and R at the start in the daemon; the model written by
+the daemon (`model_*`, `model_commit`) with no rule of udev; the silence
+seen by the daemon (the reads of sysfs fail, `health` = `Dead`); the
+module without the learning (`discussion.md`, "A daemon that does the
+work", "B: what the module holds").
+
 ## The design
 
 ### The rules of the module
