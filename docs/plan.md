@@ -146,9 +146,12 @@ its values; they are not in dmesg.
   module in dmesg. At `done` the module puts the new model into its
   attributes `model_*`, the ones the rule of D13 writes at boot, and sets
   `learn_state` to `done`; the program reads them from sysfs.
-- To check on the device: `systemctl cat systemd-udevd`, that its
-  sandbox lets a program of `RUN` write into `/var/lib` and call
-  `systemctl`.
+- The sandbox of `systemd-udevd.service` on the device lets it: no
+  `ProtectSystem`, no `ReadOnlyPaths`; `AF_UNIX` for `systemctl`;
+  `@system-service` has `fsync`; all capabilities but the clock
+  (`discussion.md`, "The sandbox of udevd"). The program is built for
+  aarch64 (`SystemCallArchitectures=native`) and needs no memory both
+  writable and executable (`MemoryDenyWriteExecute`).
 - The program takes two events (D19):
   - the AXP silent: a forced power off;
   - the AXP silent and a model: it writes the model into the state file
