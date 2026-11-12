@@ -73,3 +73,4 @@ not answered yet is in `plan.md`, "Open questions".
 | D66 | 2026-11-12 | user | Variant B: the daemon sees a suspend by `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`: a growth drops its learning (D33). |
 | D67 | 2026-11-12 | user | Variant B: the log of the daemon is its stdout and stderr, in the journal of systemd. |
 | D68 | 2026-11-12 | user | Variant B: the daemon runs always, from the boot (a service of systemd, enabled), not started by udev. It watches for the files of our battery in sysfs; when they are there it writes the model it has (if any) and/or starts a learning. Replaces the start of D65; no `Restart=` still. |
+| D69 | 2026-11-12 | user | Variant B: when the daemon drops a learning (a suspend, D66), it has no more need to run: it exits. |

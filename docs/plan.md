@@ -67,8 +67,11 @@ Only in B, proposed (`discussion.md`, "Variant B in full"):
   reads failing; then the run kept, the mean made, `systemctl poweroff
   --force` (D49). Kept in memory only, as D16; a restart of the daemon
   drops a learning (a line in its log).
-- QB5, decided (D66): a growth of `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`
-  drops the learning (D33).
+- QB5, decided (D66, D69): a growth of `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`
+  drops the learning (D33), and the daemon exits (exit code 0; no
+  `Restart=`). After that, in the same boot: no learning of a later full
+  charge, and no model written if the module is loaded again (it runs on
+  its default until the next boot).
 - QB6, decided (D67): stdout and stderr into the journal; the lines of
   the module stay in dmesg.
 
