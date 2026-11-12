@@ -140,17 +140,18 @@ its values; they are not in dmesg.
 
 ### User space
 
-- A rule of udev on the uevent `axp_silent`: `RUN+="/usr/bin/systemctl
-  start --no-block uconsole-soft-battery-save.service"`; udev kills a long
-  `RUN`. A service started so does not get the keys of the event: the
-  program reads the same values from sysfs. At `done` the module puts the
-  new model into its attributes `model_*`, the ones the rule of D13
-  writes at boot, and sets `learn_state` to `done`.
+- A rule of udev on the uevent `axp_silent`. Open: the program right
+  in `RUN` (proposed), or `RUN+="/usr/bin/systemctl start --no-block
+  uconsole-soft-battery-save.service"` (`discussion.md`, "Why a
+  service"). At `done` the module puts the new model into its attributes
+  `model_*`, the ones the rule of D13 writes at boot, and sets
+  `learn_state` to `done`; the program reads them from sysfs.
 - The program takes two events (D19):
   - the AXP silent: a forced power off;
   - the AXP silent and a model: it writes the model into the state file
     `/var/lib/uconsole-soft-battery/model.env` (the attributes `model_*`, as
-    they are), syncs, then a forced power off.
+    they are), `fsync` of the file and of its directory, then a forced
+    power off.
 - It runs only at that event: no daemon, no write to the disk during the
   learning (D16, D20).
 - Proposed: the forced power off is `systemctl poweroff --force`: no stop
@@ -187,10 +188,9 @@ Two packages (D6, D25).
 - The program (D25), in Rust: `sys-power/uconsole-soft-battery-tools`
   (D26), by the eclass `cargo`. Proposed: one program
   `uconsole-soft-battery` with commands; `save` is the first (the work at
-  the silence); the service `uconsole-soft-battery-save.service` runs
-  it. It holds all of user space: the program, the
+  the silence). It holds all of user space: the program, the
   rule of udev of the silence, the rule of udev of the model at boot
-  (D13), the service. It depends on the package of the module.
+  (D13). It depends on the package of the module.
 - Proposed: the program takes no crate, only `std`: it reads sysfs,
   writes a file, syncs, runs `systemctl`. Then the ebuild has no list of
   crates to fetch (`CRATES`) and no tarball of vendored crates.
@@ -212,7 +212,7 @@ Two packages (D6, D25).
 4. The module: the set up of the PMIC, the count, the power supply, the
    learning.
 5. User space, the package of the program (Rust): the program, the
-   rules of udev, the service.
+   rules of udev.
 6. The kernel series: 0010 out, `bump.sh --sum`.
 7. A test: a full charge, a discharge to the silence of the AXP, the save,
    the power off, the model at the next boot.
