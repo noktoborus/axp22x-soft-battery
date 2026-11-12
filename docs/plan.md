@@ -295,6 +295,53 @@ gives about six lines.
 - Put off: the module in the tree of the kernel,
   `plans/uconsole-soft-battery-in-tree.md`.
 
+### The default curve
+
+D58, D59. With no model the module works out the percent by the voltage
+alone: OCV = V + I × R (the means of 30 s, R `r_uohm`), on
+`ocv-capacity-table-0` of `battery@0` if the device tree has it, else on
+the curve built in. 100 % in the full state (D40); 0 % at `V_thr`
+(`end_uv`, D21).
+
+The curve built in: the mean of the three logs to the silence (24.10,
+25.10, 08.11), `tools/make-curve.py 87`; the percent is of the charge of
+each run to its silence:
+
+| % left | 100 | 95 | 90 | 85 | 80 | 75 | 70 | 65 | 60 | 55 | 50 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| OCV, mV | 4221 | 4119 | 4093 | 4084 | 4075 | 4064 | 4035 | 3988 | 3934 | 3897 | 3868 |
+
+| % left | 45 | 40 | 35 | 30 | 25 | 20 | 15 | 10 | 5 | 0 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| OCV, mV | 3837 | 3799 | 3760 | 3716 | 3664 | 3608 | 3554 | 3499 | 3437 | 3351 |
+
+```c
+/* OCV, mV, at 100, 95, ... 0 % left */
+static const u16 default_ocv_mv[21] = {
+	4221, 4119, 4093, 4084, 4075, 4064, 4035, 3988, 3934, 3897, 3868,
+	3837, 3799, 3760, 3716, 3664, 3608, 3554, 3499, 3437, 3351
+};
+```
+
+The same as the device tree takes it:
+
+```
+ocv-capacity-celsius = <25>;
+ocv-capacity-table-0 = <4221000 100>, <4119000 95>, <4093000 90>,
+	<4084000 85>, <4075000 80>, <4064000 75>, <4035000 70>,
+	<3988000 65>, <3934000 60>, <3897000 55>, <3868000 50>,
+	<3837000 45>, <3799000 40>, <3760000 35>, <3716000 30>,
+	<3664000 25>, <3608000 20>, <3554000 15>, <3499000 10>,
+	<3437000 5>, <3351000 0>;
+```
+
+The error of the level by the voltage alone, at each 30 s of each log:
+with this curve, the mean −2.4 to +2.2 %, the largest 4.7 %; with the curve
+of the two other logs only, the largest 7.2 %. At the bottom the curves of
+the runs part (132 mV at 0-5 %): the silence comes at another OCV at
+another load; the end of D35 (0 % at `V_thr` under load) sets 0 % there,
+not the curve.
+
 ## Steps
 
 1. Done: the five writes of Rex, read in the datasheet
