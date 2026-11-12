@@ -1,8 +1,13 @@
 """R from small steps; the error of a table of N points against the curve.
 Usage: python3 -I log-r-table.py <log>"""
 import json, sys, statistics as st
+
+def enc(path):
+    """The logs saved by PowerShell are UTF-16 with a mark; the others UTF-8."""
+    with open(path, "rb") as f:
+        return "utf-16" if f.read(2) in (b"\xff\xfe", b"\xfe\xff") else "utf-8"
 ts, vs, is_ = [], [], []
-with open(sys.argv[1], encoding="utf-16") as f:
+with open(sys.argv[1], encoding=enc(sys.argv[1])) as f:
     for line in f:
         line = line.strip()
         if not line.startswith("{"): continue

@@ -3,9 +3,14 @@ of the voltage after averaging, and the slope of the curve.
 Usage: python3 -I log-r-noise-slope.py <log> [R in mOhm, when the log has no steps]"""
 import json, sys, statistics as st
 
+def enc(path):
+    """The logs saved by PowerShell are UTF-16 with a mark; the others UTF-8."""
+    with open(path, "rb") as f:
+        return "utf-16" if f.read(2) in (b"\xff\xfe", b"\xfe\xff") else "utf-8"
+
 path = sys.argv[1]
 ts, vs, is_ = [], [], []
-with open(path, encoding="utf-16") as f:
+with open(path, encoding=enc(path)) as f:
     for line in f:
         line = line.strip()
         if not line.startswith("{"):
