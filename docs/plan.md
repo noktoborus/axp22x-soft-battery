@@ -8,29 +8,29 @@ Not decided where it says "proposed".
 
 ### The module
 
-Open, proposed on 2026-11-12 (`discussion.md`, "On the drivers of the
-AXP"): the module binds to the cell `battery-power-supply` of the MFD in
-place of `axp20x_battery` (blacklisted by the package), takes the ADC by
-the IIO channels of `axp20x_adc`, the registers 0x00, 0x01 by the regmap
-of the parent, the values of `battery@0` by `power_supply_get_battery_info`;
-no overlay, no node of its own, no line of `config.txt`. If taken, it
-changes D5 and D32 and the overlay of "The packages".
+The module binds to the cell `battery-power-supply` of the MFD `axp20x`
+in place of `axp20x_battery`, which the package blacklists (D36;
+`discussion.md`, "On the drivers of the AXP", "A cell of the MFD"). No
+overlay, no node of its own, no change of the device tree, of the
+kernel or of `config.txt`.
 
 - One power supply of type Battery, `uconsole-soft-battery`; its
   properties and its own attributes: "The interface" below.
-- The node `battery-power-supply` of the AXP is off (D5). The module sets
-  the PMIC up at each probe: the current of the charge (2.1 A,
-  `constant-charge-current-max-microamp` of `battery@0`), `V_OFF`
+- Its `of_match_table` has `x-powers,axp221-battery-power-supply`, the
+  compatible of the cell; udev loads it by the alias of that device. The
+  module sets the PMIC up at each probe: the current of the charge (2.1 A,
+  `constant-charge-current-max-microamp` of `battery@0`, by
+  `power_supply_get_battery_info()` on the node of the cell, which has
+  `monitored-battery`), `V_OFF`
   (register 0x31), the voltage of the full charge, and the five writes of
   Rex in `axp20x_power_probe` (0x30, 0x32, 0x34, 0x36, 0x90); the meaning
   of each is to check in the datasheet.
-- The data: the ADC of the AXP read by its regmap: 0x78 voltage, 0x7A
-  current of the charge, 0x7C current of the discharge. They are volatile
-  in the regmap: each read goes to the bus. The IIO channels of
-  `axp22x-adc` are not used: an overlay of its own cannot take a label of
-  the overlay `clockworkpi-uconsole-cm5`.
-- The AXP is found by its compatible (`of_find_compatible_node`), then its
-  I2C client, then `dev_get_regmap()`.
+- The data: the ADC by the IIO channels of `axp20x_adc`,
+  `devm_iio_channel_get(dev, "batt_v")`, `"batt_chrg_i"`,
+  `"batt_dischrg_i"`: the map of that driver names our device
+  (`axp20x-battery-power-supply`). `-EPROBE_DEFER` while they are not
+  there. The registers 0x00 and 0x01 by `dev_get_regmap(dev->parent)`;
+  they are volatile in the regmap: each read goes to the bus.
 - The count: every 1 s, the charge and the energy (V × I × dt) by
   trapezoids. The charge is net: in minus out.
 - The marker of the full charge. Proposed: the full state, not its
@@ -230,9 +230,9 @@ its values; they are not in dmesg.
   current; `V_end`, `I_end` at the silence (3.10 V at 1.9 A in the run of
   2026-11-08, `hardware/notes/discharge-cm5.md`).
 - With no model: `charge_full_design` of the device tree and the curve of
-  `hardware/notes/discharge-cm5.md`. The end is 3.2 V under load (D21), a property of the node of the module in its overlay
-  (`uconsole,end-microvolt = <3200000>`); the curve is cut there. With a
-  model the end is its `V_end`, lower or higher than 3.2 V.
+  `hardware/notes/discharge-cm5.md`. The end is 3.2 V under load (D21), a
+  parameter of the module, `end_uv` (no node of its own: D36); the curve
+  is cut there. With a model: D35.
   (`discussion.md`, "The end by 3.2 V")
 - `power_supply_batinfo_ocv2cap()` of the kernel takes a table of OCV;
   the table under load does not fit it. The module looks up its own
@@ -310,7 +310,7 @@ its values; they are not in dmesg.
 
 Two packages (D6, D25). Their source is a copy in `files/` of each (D28):
 a script of this repository (`make export`, say) copies the module
-(`src/`, `Kbuild`, the overlay, the `include` file) into
+(`src/`, `Kbuild`, the file of modprobe) into
 `sys-power/uconsole-soft-battery/files/`, and the program (the crate, the
 rules of udev) into `sys-power/uconsole-soft-battery-tools/files/`, and
 writes the sum of `files/` into each ebuild. Its `--check` fails when the
@@ -318,16 +318,17 @@ sum is old. The version stays until a first release. A tarball of a tag
 (`SRC_URI`) when this repository is published.
 
 - The module: `sys-power/uconsole-soft-battery` (D26) in repo-uconsole;
-  `linux-mod-r1`, depends on `virtual/dist-kernel`; the overlay
-  `uconsole-soft-battery.dtbo` by `dtc -@` into `/boot/overlays`.
-- `config.txt` is not changed by any package (D32). `pkg_postinst` of
-  the package of the module says by `elog` the line to add by hand, in
-  `[pi5]`, after `dtoverlay=clockworkpi-uconsole-cm5`:
-  `dtoverlay=uconsole-soft-battery`; and to delete it before the package
-  is removed.
-- The overlay: `target-path` to the node `battery-power-supply`,
-  `status = "disabled"`; a node `compatible = "uconsole,soft-battery"` at the
-  root, so that udev loads the module by its alias.
+  `linux-mod-r1`, depends on `virtual/dist-kernel`; it installs the
+  module and `/etc/modprobe.d/uconsole-soft-battery.conf`: `blacklist
+  axp20x_battery` (D36). The package removed, the file goes with it and
+  `axp20x_battery` comes back at the next boot.
+- The ebuild stops when the kernel has `axp20x_battery` built in
+  (`CONFIG_BATTERY_AXP20X=y`): a blacklist cannot stop a driver built in
+  (`linux_chkconfig_builtin` of `linux-info`); the source of the module
+  has the same check (`#if IS_BUILTIN(CONFIG_BATTERY_AXP20X)`, `#error`).
+  (`discussion.md`, "A conflict in Kconfig".)
+- `config.txt` is not changed (D32); with no overlay there is no line to
+  tell of.
 - The program (D25), in Rust: `sys-power/uconsole-soft-battery-tools`
   (D26), by the eclass `cargo`. Proposed: one program
   `uconsole-soft-battery` with commands; `save` is the first (the work at
@@ -352,7 +353,7 @@ sum is old. The version stays until a first release. A tarball of a tag
 2. The scheme of the states and threads: a `.scheme` on a desk of
    showcase.
 3. The packages: the script of the copy into `files/` (D28), the ebuilds, `linux-mod-r1` in the cross build of unidev
-   (does it find `/usr/src/linux` of ROOT), the overlay.
+   (does it find `/usr/src/linux` of ROOT), the file of modprobe.
 4. The module: the set up of the PMIC, the count, the power supply, the
    learning.
 5. User space, the package of the program (Rust): the program, the
