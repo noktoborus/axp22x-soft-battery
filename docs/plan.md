@@ -451,6 +451,12 @@ not the curve.
 ## Open questions
 
 - QB1, QB4: variant B, in "Two variants".
+- Q10. The period of the work of the module, proposed 10 s in place of 1 s
+  (`discussion.md`, "Each second, or events"): the count loses 0.2 % at
+  most even at 60 s; the silence then takes 6 samples × 10 s, about 1 min
+  (D41 changed), the guard at 2 min stays after it; the charger by the IRQ
+  of `axp20x-ac` as now; 0x01 at each sample on the charger as now; the
+  daemon reads each 10 s too. A parameter `sample_ms`.
 
 ## Fixed on the review
 
