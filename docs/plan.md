@@ -408,7 +408,8 @@ user.
    `linux-mod-r1` and `cargo` in the cross build of unidev (no docker
    here; the module not compiled yet: this container has no flex and no
    bison for the tree of the kernel).
-4. Done: the module (D114), `module/axp22x_soft_battery.c`; built against
+4. Done: the module (D114, D115), `module/`: `main.c`, `dt.c`, `pmic.c`,
+   `level.c`, `work.c`, `props.c`, `sb.h`; built against
    the tree of `uconsole-7.3` (x86, `W=1`, no warning), not yet on the
    device.
 5. The program: `import` first (the three logs), then `gen-dts`, then

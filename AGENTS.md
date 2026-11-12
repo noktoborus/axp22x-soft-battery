@@ -33,7 +33,8 @@ RULE layout.tools = tools/, scripts that read logs of the device for the
      design; each listed in README.md, "Tools"
 RULE layout.docs = docs/, the documents (below)
 RULE layout.module = module/, the source of the package
-     `sys-power/axp22x-soft-battery`: the module, its Makefile, the overlay
+     `sys-power/axp22x-soft-battery`: the module (`sb.h`, `*.c`), its
+     Makefile, the overlay
      `axp22x-soft-battery.dts`, the file of modprobe.d
 RULE layout.daemon = daemon/, the source of the package
      `sys-power/axp22x-soft-battery-daemon`: the crate, the unit, the preset
@@ -70,6 +71,18 @@ RULE module.impact : the module weighs as little as it can on the running
 EX-  a read of 0x00 each second for the charger, when `axp22x-ac` tells it
      by its IRQ
 RULE module.small : the module is small and easy to read
+RULE module.files : one file per part of the module, not blocks in one
+     file; `sb.h` lists the parts
+EX+  dt.c the device tree, pmic.c the registers, level.c the level,
+     work.c the samples, props.c the power supply, main.c the driver
+RULE module.comments : a comment stands over a function, a struct or a
+     file, never in the body of a function; a comment is a short text in
+     simplified english, never a number of docs/decisions.md
+THEN a part of a body that needs a comment becomes a function with a
+     name that says it
+EX+  /* No AXP answers on the bus: all three reads end in -ENXIO. */
+     static bool sb_axp_silent(const int err[3])
+EX-  /* the silence (D41) */ inside sb_work()
 RULE module.poweroff : the module does not power the system off; user
      space decides it
 EXC  the guard of D71: `hw_protection_trigger()` at 12 failed samples
