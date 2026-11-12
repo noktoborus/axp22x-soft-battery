@@ -66,10 +66,10 @@ Proposed (Q3). The scheme: desk `uconsole-soft-battery-work` of showcase,
 - The silence of the AXP (D41): 6 failed samples in a row, a sample at
   most once a second, so about 5 s after the first fail; then the work
   stops. In the three logs to the silence no read failed before it and
-  none worked after it. Proposed (Q2): a sample counts as failed only when
-  all its reads give `-ENXIO`; another error is a line `ADC read failed`
-  (rate limited) and the sample is skipped; the number a parameter,
-  `silent_samples`.
+  none worked after it. A sample counts as failed only when all its three
+  reads give `-ENXIO`; another error is a line `ADC read failed` (rate
+  limited) and the sample is skipped; the number a parameter,
+  `silent_samples` (D41).
 - Suspend (D33): the work is cancelled; a learning is dropped. Resume:
   the time of the last sample is set to now; the level starts again by
   the voltage; the work starts again. Not to be tried on the CM5 now
@@ -253,7 +253,6 @@ gives about six lines.
 
 ## Open questions
 
-- Q2. What counts as a failed sample: all its reads `-ENXIO`; other errors logged, not counted (the number, 6: D41).
 - Q3. The work in time: one work each 1 s; one mutex, for sums and copies
   only; `power_supply_changed()` at a change of `status` or of 1 %.
 - Q4. The interface: the attributes, the draft and `model_commit`, the
