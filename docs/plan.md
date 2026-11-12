@@ -68,7 +68,7 @@ The module makes the model at `done` (D20), in integers:
   current moved by 200 mA or more (proposed values);
 - the table: 21 points, one each 5 % of the charge out, taken from the
   curve between its points; each point is the mean V and the mean I
-  under load, as measured (proposed). No OCV: the AXP gives the voltage
+  under load, as measured (D22). No OCV: the AXP gives the voltage
   under load only (`discussion.md`, "How to get OCV");
 - `Q_full`, `E_full`, `V_end`, `I_end` from the count.
 
@@ -123,11 +123,15 @@ its values; they are not in dmesg.
 - The base is the count: `charge_now / Q_full`. The marker of the full
   charge sets 100 %.
 - At a boot in the middle of a discharge the start is by the voltage
-  (proposed): the means V and I over 30-60 s; the point q of the table
+  (D22): the means V and I over 30-60 s; the point q of the table
   where V_t(q) − (I − I_t(q)) × R = V. R only moves the curve by the
   difference of the currents, not by the whole current. Nothing of the
   charge is saved over a boot (D16).
-- The voltage corrects the count: see "Open questions", the level after D21.
+- The voltage corrects the count (D23): on a discharge the level falls
+  at the speed of the count times f = (left by the voltage) / (left by
+  the count), f in 0.5..2; it never rises on a discharge. The voltage
+  weighs nothing above 30 % and in full at 10 %; V and I are means over
+  30 s. On the charger the count only; the end of the charge sets 100 %.
 - The error of the voltage, from the table of `discharge-cm5.md`: the
   voltage moves about 75 mV per 10 % at 60-40 %, about 130 mV per 10 %
   at 20-0 %. An error of 20 mΩ in R at a difference of 0.5 A from the
@@ -201,20 +205,8 @@ its values; they are not in dmesg.
 
 ## Open questions
 
-- How the count and the voltage make the level, now that the end is a
-  voltage (D21). Worked out in `discussion.md`, "The level after D21".
-  Proposed: C', the count scaled by the voltage:
-  - level by the count: (Q_full − out) / Q_full;
-  - level by the voltage: the point of the table under load, with the
-    means of V and I over 30 s;
-  - while the cells discharge, the level falls at the speed of the
-    count times f = (left by the voltage) / (left by the count), f held
-    in 0.5..2; the level never rises on a discharge;
-  - the voltage weighs nothing above 30 % and in full at 10 %;
-  - on the charger: the count only; the end of the charge sets 100 %.
-  The values (30 s, 0.5..2, 30 %, 10 %) are a first guess.
-- The table under load (V and I each 5 %) in place of a table of OCV:
-  proposed, not decided (`discussion.md`, "How to get OCV").
+- The values of C' (D23): 30 s, f in 0.5..2, 30 %, 10 %; to check by
+  the level at the silence, in dmesg.
 - One module (count, learning, level) or two.
 - The program of user space: in the package of the module or in its own.
 - The line `dtoverlay=uconsole-battery` of `config.txt`: by
