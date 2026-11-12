@@ -83,7 +83,7 @@ By the voltage always (D90), on two curves (D91):
 |---|---|
 | no charger | OCV ≈ V + I × R on the curve of the discharge |
 | the charger in, the voltage under `voltage-max-design` − `full-margin-microvolt` | OCV ≈ V − I × R on the curve of the discharge |
-| the charger in, the voltage at that or over (the phase of constant voltage) | the current of the charge on the curve of the charge |
+| the charger in, the voltage at that or over (the phase of constant voltage) | the current of the charge on the curve of the charge; with none, OCV ≈ V − I × R on the curve of the discharge (D102) |
 | the full state (D40) | 100 % |
 
 - V and I are the means of 30 s; R is `factory-internal-resistance-micro-ohms`
@@ -94,8 +94,10 @@ By the voltage always (D90), on two curves (D91):
   (D21, D35).
 - The curve of the discharge: `ocv-capacity-table-0`, else the one built in
   (D59: the mean of the three logs). The curve of the charge:
-  `axp22x-soft-battery,charge-cv-table`, else none: in the phase of constant
-  voltage the level then does not fall, and `Full` sets 100 % (D91).
+  `axp22x-soft-battery,charge-cv-table`, else none and none built in: the
+  phase of constant voltage then takes the curve of the discharge, the level
+  does not fall, and `Full` sets 100 % (D91, D102). By the logs of a charge
+  that phase then shows 7-14 % low until `Full`.
 
 ### status (D40)
 
@@ -290,15 +292,13 @@ user.
    `battery-power-supply` in `/proc/device-tree`, for `gen-dts`.
 2. Done: the scheme of B on the desk of showcase,
    `shots/3-variant-b.scheme`.
-3. A log of axp-log of a full charge, the device on, from low to `Full`:
-   the curve of the charge built in (D91).
-4. The packages: the script of the copy, the two ebuilds; `linux-mod-r1`
+3. The packages: the script of the copy, the two ebuilds; `linux-mod-r1`
    and `cargo` in the cross build of unidev.
-5. The module.
-6. The program: `import` first (the three logs), then `gen-dts`, then
+4. The module.
+5. The program: `import` first (the three logs), then `gen-dts`, then
    `daemon`.
-7. The kernel series: 0010 out.
-8. A test on the device: the module with no model (the voltage alone); a
+6. The kernel series: 0010 out.
+7. A test on the device: the module with no model (the voltage alone); a
    model from the three logs by `import` and `gen-dts`; a full charge and a
    discharge to the silence with the daemon.
 
