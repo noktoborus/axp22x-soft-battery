@@ -301,7 +301,8 @@ D58, D59. With no model the module works out the percent by the voltage
 alone: OCV = V + I × R (the means of 30 s, R `r_uohm`), on
 `ocv-capacity-table-0` of `battery@0` if the device tree has it, else on
 the curve built in. 100 % in the full state (D40); 0 % at `V_thr`
-(`end_uv`, D21).
+(`end_uv`, D21). On a discharge the level does not rise: the least of what was shown
+since the charger went out (D60).
 
 The curve built in: the mean of the three logs to the silence (24.10,
 25.10, 08.11), `tools/make-curve.py 87`; the percent is of the charge of
