@@ -260,6 +260,11 @@ sum is old. The version stays until a first release. A tarball of a tag
     change of the options or of `runs/`.
 - The values of the model and of C'. Worked out in `discussion.md`,
   "The values, from two logs". Proposed:
+  - R: learned by the module in each run, from the voltage and the
+    current of the ADC; not the RDC of the AXP (`module.axp`). One R per
+    model, the same through a discharge. Only steps below 50 % count,
+    where the voltage weighs (`discussion.md`, "R: a constant, the AXP,
+    or learned");
   - R: the median of dV/dI over steps of 1 s of 30 mA or more, kept as a
     histogram of 5 mOhm bins (40 × u16); fewer than 10 steps in a run: no
     R learned, the R of the model in use stays; the default R is a
