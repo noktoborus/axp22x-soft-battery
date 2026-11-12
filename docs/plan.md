@@ -547,7 +547,7 @@ not the curve.
 - To do for D91: a log of axp-log of a full charge, the device on, from
   low to `Full`, to make the curve of the charge built in.
 
-- Q15. The error after the silence (D93): `-ENODATA`, not `-ENXIO`. In
+- Q15, decided (D94). The error after the silence (D93): `-ENODATA`, not `-ENXIO`. In
   `power_supply_sysfs.c` of `uconsole-7.3`: a read that fails with
   `-ENODATA` is logged by `dev_dbg_ratelimited` (not seen by default), any
   other error by `dev_err_ratelimited` ("driver failed to report ...", the
