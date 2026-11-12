@@ -184,7 +184,7 @@ scheme: desk `uconsole-soft-battery-work` of showcase,
   (`uconsole/linux/notes/suspend-cm5.md`).
 - The silence of the AXP (D41): 6 failed samples in a row, a sample at
   most once a second, so about 5 s after the first fail; then the work
-  stops. A sample counts as failed only when all its three reads give
+  goes on for the guard (D71). A sample counts as failed only when all its three reads give
   `-ENXIO`; another error is a line `ADC read failed` (rate limited) and
   the sample is skipped; `silent_samples` (D41).
 
@@ -378,11 +378,12 @@ gives about six lines.
   takes the crates from crates.io by `CRATES` (`cargo_crate_uris`), each
   with its line in `Manifest`; that `lto = "fat"` of `Cargo.toml` holds
   under the `cargo` eclass is to see in the log of the build.
-- The guard (D57): `axp22x_guard`, a module of its own in the
-  package of the module, loaded by
-  `/usr/lib/modules-load.d/axp22x-guard.conf`; each 10 s it reads
-  `online` of `axp20x-ac`; 12 errors in a row → `hw_protection_trigger()`;
-  `system_freezable_wq`, no code of suspend; about 60 lines.
+- The guard (D71): in the main module. After the silence (6 failed
+  samples, `health` = `Dead`) the work goes on; at 12 failed samples in a
+  row (about 2 min at 10 s, D70) `hw_protection_trigger("AXP silent",
+  20000)`: an orderly power off, forced after 20 s. No `axp22x_guard`, no
+  file of modules-load. Without our package (the old way, `axp20x_battery`)
+  there is no guard: 0010 left the series (D4).
 - Put off: the module in the tree of the kernel,
   `plans/axp22x-soft-battery-in-tree.md`.
 

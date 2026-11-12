@@ -50,20 +50,17 @@ RULE docs.lang = simplified english (the rules of the workspace, `text.lang`)
 
 RULE module.minimal : the module does its job and nothing more: no
      fallback, no retry, no workaround
-THEN logic that guards against a failure of user space is a separate
-     module, made only when it is needed
-EX-  a call of `hw_protection_trigger()` in the main module when user
-     space does not power off in time
-EX+  that call in `axp22x_guard`, a module of its own (D57)
-EX-  a uevent sent again every 10 s while the AXP is silent
+EXC  the guard of the silence: at 12 failed samples in a row the module
+     calls `hw_protection_trigger()` (D71, the word of the user)
 RULE module.impact : the module weighs as little as it can on the running
      system: as few locks as it can, the interfaces of the drivers there
      are before a read of its own
 EX-  a read of 0x00 each second for the charger, when `axp20x-ac` tells it
      by its IRQ
 RULE module.small : the module is small and easy to read
-RULE module.poweroff : the module never powers the system off; only user
+RULE module.poweroff : the module does not power the system off; user
      space decides it
+EXC  the guard of D71: `hw_protection_trigger()` at 12 failed samples
 RULE module.axp : the AXP is not a store and its gauge is not used
 WHY  the AXP forgets what was written into its registers
 THEN from the AXP the module takes only what it measures and tells now:
