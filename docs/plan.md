@@ -68,7 +68,7 @@ Only in B, proposed (`discussion.md`, "Variant B in full"):
   - the memory: the model in use and the draft (2 × about 104 B), the
     count, the sums of 30 s, the default curve (84 B, `const`): about
     0.3 KiB. No bins (D44 is of A).
-- QB2, decided (D63). The daemon reads each 1 s `charge_counter`,
+- QB2, decided (D63, D70). The daemon reads each 10 s `charge_counter`,
   `voltage_now`, `current_now`, `status`, `health` of our battery: the
   copies of the last sample of the module, no read of the bus; the charge
   of the learning is the difference of `charge_counter`; the energy by
@@ -469,15 +469,7 @@ not the curve.
 ## Open questions
 
 - QB1, QB4: variant B, in "Two variants".
-- Q11, decided (D72, D73). The name of the property of D70, proposed
-  `axp22x-soft-battery,sample-interval-ms` on the node
-  `battery-power-supply` (the module reads it by
-  `device_property_read_u32()` on its own device). To set it, the overlay of
-  the device changes (a patch of the series, D36 kept no change of the
-  device tree; with no property, 10 s). And whether the other values
-  (`end_uv`, `r_uohm`, `full_margin_uv`, `full_current_ua`,
-  `silent_samples`, C') go to the device tree too, or stay parameters of the
-  module.
+- Which variant is made first, A or B (D61).
 
 ## Fixed on the review
 
