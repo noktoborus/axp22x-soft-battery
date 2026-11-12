@@ -182,11 +182,13 @@ scheme: desk `uconsole-soft-battery-work` of showcase,
   the time of the last sample is set to now; the level starts again by
   the voltage; the work is queued. Not to be tried on the CM5 now
   (`uconsole/linux/notes/suspend-cm5.md`).
-- The silence of the AXP (D41): 6 failed samples in a row, a sample at
-  most once a second, so about 5 s after the first fail; then the work
-  goes on for the guard (D71). A sample counts as failed only when all its three reads give
-  `-ENXIO`; another error is a line `ADC read failed` (rate limited) and
-  the sample is skipped; `silent_samples` (D41).
+- The silence of the AXP (D41, D70): 6 failed samples in a row, a sample
+  each 10 s, so about 1 min after the first fail: `health` = `Dead`. The
+  work goes on: at 12 failed samples (about 2 min) the guard,
+  `hw_protection_trigger()` (D71). A sample counts as failed only when all
+  its three reads give `-ENXIO`; another error is a line `ADC read failed`
+  (rate limited) and the sample is skipped; `silent_samples` (6),
+  `guard_samples` (12).
 
 ### The marker of the full charge
 
