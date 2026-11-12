@@ -170,42 +170,55 @@ that the count goes on and no point is added; dmesg says it once.
 
 ### The interface
 
-Proposed (Q4). Units of the power supply class: µV, µA, µAh, µWh; R in
-µΩ.
+Proposed (Q4; `discussion.md`, "Q4: the interface, in full"). Units of the
+power supply class: µV, µA, µAh, µWh, µΩ.
 
-The properties (read by upower): `present`, `status` (above),
+The properties of the class (read by upower and by anyone):
+`present`, `status` (D40), `health` (`Good`; `Dead` at the silence),
 `technology`, `capacity`, `capacity_level`, `voltage_now`, `current_now`
-(negative in a discharge, as `axp20x_battery` gives it: upower takes a
-battery with `current_now` < 0 for discharging, `discussion.md`, "How
-upower tells full from charging"), `power_now`, `charge_full`, `charge_full_design`, `charge_now`,
-`energy_full`, `energy_full_design`, `energy_now`, `time_to_empty_now`,
-`time_to_full_now`, `voltage_min_design`, `voltage_max_design`,
-`constant_charge_current_max`, `scope` (System). How three of them are
-worked out: Q7.
+(negative in a discharge), `power_now`, `charge_full` (`Q_full` of the
+model in use), `charge_full_design` (`battery@0`), `charge_now`,
+`energy_full`, `energy_full_design`, `energy_now`, `internal_resistance`
+(R of the model in use; a property of the class since 2025),
+`time_to_empty_now`, `time_to_full_now`, `voltage_min_design`,
+`voltage_max_design`, `constant_charge_current_max`, `scope` (System).
+How three of them are worked out: Q7.
 
-Its own attributes (`attr_grp` of `power_supply_config`), one value or one
-list per file:
+Its own attributes (`attr_grp`), one value or one list of one type per
+file (`Documentation/filesystems/sysfs.rst`):
 
 | attribute | mode | what |
 |---|---|---|
-| `model_q_full`, `model_e_full`, `model_r`, `model_v_end`, `model_i_end`, `model_table_uv`, `model_table_ua` | rw | the model: a draft until `model_commit` |
-| `model_commit` | wo | `1`: the draft is checked and taken at once; a bad value: `-EINVAL`, a line in dmesg, the model in use stays |
+| `model_q_full`, `model_e_full`, `model_r`, `model_v_end`, `model_i_end` | rw | the draft of the model: a number each |
+| `model_table_uv`, `model_table_ua` | rw | the draft of the table: a list each, split by spaces, the same length |
+| `model_commit` | wo | `1`: the draft is checked and becomes the model in use, at once |
 | `model_source` | ro | `default` or `loaded` |
-| `run_q_full`, `run_e_full`, `run_r`, `run_v_end`, `run_i_end`, `run_table_uv`, `run_table_ua` | ro | the run as learned (D29), after `done` |
+| `run_q_full`, `run_e_full`, `run_r`, `run_v_end`, `run_i_end`, `run_table_uv`, `run_table_ua` | ro | the run as learned (D29); `-ENODATA` until `done` |
 | `learn_state` | ro | `idle`, `full`, `learning`, `done` |
-| `learn_charge`, `learn_energy`, `learn_seconds` | ro | the count of the learning that runs |
-| `axp_state` | ro | `ok`, `silent` |
+| `learn_charge` | ro | the charge counted by the learning that runs, µAh |
 
-The parameters of the module, writable at run time (D24):
-`end_uv` (3200000), `r_uohm` (87000), `full_margin_uv` (50000), the values
-of C' (30 s, 0.5..2, 30 %, 10 %), the least step for R (300 mA).
-
-The uevent at the silence (D19): `UCONSOLE_SOFT_BATTERY_EVENT=axp_silent`,
-`UCONSOLE_SOFT_BATTERY_RUN=1` with a run, `0` with none. It carries no
-model: the program reads `run_*` from sysfs.
-
-The files of runs and the output of `load`: lines `KEY=value`, the keys
-the names of the attributes in capitals (`RUN_Q_FULL`, `MODEL_Q_FULL`).
+- The draft: at the probe it holds the default model; a write changes
+  the draft only; a read gives the draft; after a commit the draft is the
+  model in use. The model in use is seen by `charge_full`, `energy_full`,
+  `internal_resistance` and `model_source`.
+- The checks of `model_commit`: the two lists of the same length, 2 to 64
+  points; the voltage of the table falls along it; `Q_full` 0.5-50 Ah;
+  R 10-500 mΩ; `V_end` 2.9-3.8 V. A bad value: `-EINVAL`, one line in
+  dmesg, the model in use stays.
+- The silence (D19): the module sets `health` to `Dead`, `learn_state` to
+  `done` when a run is there, and calls `power_supply_changed()`: the
+  uevent `change` of the class carries `POWER_SUPPLY_HEALTH=Dead`. The rule
+  of udev matches that key; the program reads `learn_state` and `run_*`.
+  No uevent and no keys of our own. After the silence the work stops, so
+  there is no second such uevent.
+- The keys of the files of runs and of the output of `load`: the names of
+  the attributes in capitals (`RUN_Q_FULL`, `MODEL_Q_FULL`); a run becomes
+  a model by its prefix.
+- The parameters of the module, writable at run time (D24): `end_uv`
+  (3200000, D21), `r_uohm` (87000, D34), `full_margin_uv` (50000, D39),
+  `full_current_ua` (100000, D39), `r_step_min_ua` (300000, D34),
+  `silent_samples` (6, D41), and C' (D23): `mean_s` (30), `f_min_pct` (50),
+  `f_max_pct` (200), `weight_from_pct` (30), `weight_full_pct` (10).
 
 ### dmesg
 
@@ -218,8 +231,8 @@ gives about six lines.
 
 - The program `uconsole-soft-battery`, in Rust (D25), package
   `sys-power/uconsole-soft-battery-tools` (D26).
-- At the silence: a rule of udev runs `uconsole-soft-battery save` right in
-  `RUN` (D27); no service. The sandbox of udevd allows its work
+- At the silence: a rule of udev on `POWER_SUPPLY_HEALTH=Dead` (Q4) runs
+  `uconsole-soft-battery save` right in `RUN` (D27); no service. The sandbox of udevd allows its work
   (`discussion.md`, "The sandbox of udevd").
   - With no run: a forced power off (D19).
   - With a run: it checks it (proposed, Q6), keeps it as
@@ -275,8 +288,11 @@ gives about six lines.
 
 ## Open questions
 
-- Q4. The interface: the attributes, the draft and `model_commit`, the
-  units, the uevent, the keys of the files, the parameters.
+- Q4. The interface ("The interface"): the properties with `health` and
+  `internal_resistance` of the class; the attributes, fewer (no
+  `axp_state`, `learn_energy`, `learn_seconds`); the draft and its checks;
+  the silence told by `health` = `Dead` in the uevent of the class, no
+  uevent of our own; the parameters.
 - Q5. The memory: the points each 50 mAh (fixed), 512 of them.
 - Q6. The program: the mean of the last 5 valid runs, no limit of age;
   the check of a run (`Q_full` in 30..200 % of the design, V of the table
