@@ -218,8 +218,15 @@ Two packages (D6, D25).
 
 - The values of C' (D23): 30 s, f in 0.5..2, 30 %, 10 %; to check by
   the level at the silence, in dmesg.
-- The line `dtoverlay=uconsole-battery` of `config.txt`: by
-  `uconsole-pi-firmware` (a USE flag), or by hand.
+- The line `dtoverlay=uconsole-battery` of `config.txt`. Worked out in
+  `discussion.md`, "The line of config.txt". Proposed: `config.txt` of
+  `uconsole-pi-firmware` gets once a line `include uconsole-battery.txt`
+  at its end; the package of the module installs
+  `/boot/uconsole-battery.txt` (`[pi5]`, `dtoverlay=uconsole-battery`).
+  The package in place turns the new way on, the package gone turns it
+  off. To check on the device: a missing file of `include` does not stop
+  the boot; a section in the included file. Else: a USE flag of
+  `uconsole-pi-firmware`.
 - How the ebuilds in repo-uconsole take the source of this repository
   (`package.self` of `uconsole/linux/AGENTS.md`).
 - The names of the two packages.
