@@ -17,6 +17,14 @@
  * The overlay of `axp22x-soft-battery gen-dts` goes after this line. It
  * sets again the values the daemon learned. battery@0 of the overlay of
  * the device is not read.
+ *
+ * Parameters:
+ *
+ *	v_off	V_OFF, the voltage at which the PMIC cuts the power, in uV:
+ *		voltage-min-design-microvolt of the cells. 2600000 to
+ *		3300000 by 100000; not over end-microvolt.
+ *
+ *	dtoverlay=axp22x-soft-battery,v_off=3000000
  */
 
 /dts-v1/;
@@ -121,5 +129,9 @@
 				factory-internal-resistance-micro-ohms = <87000>;
 			};
 		};
+	};
+
+	__overrides__ {
+		v_off = <&axp22x_soft_battery_cells>,"voltage-min-design-microvolt:0";
 	};
 };
