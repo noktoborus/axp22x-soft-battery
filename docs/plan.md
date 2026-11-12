@@ -492,7 +492,7 @@ not the curve.
     (written); `model_commit` = `default` goes back to `dt` if there is one;
   - after a run the daemon (or `save` of A) writes the model to its log as a
     piece of the device tree, to be copied into an overlay by hand.
-- Q13. The modes of the program of B (D77, D81); open: `reset`:
+- Q13, decided (D77, D81, D82). The modes of the program of B:
   - `axp22x-soft-battery daemon`: the service of D68 runs it;
   - `axp22x-soft-battery gen-dts`: makes the mean model of `runs/` (as the
     daemon does) and prints to stdout an overlay `.dts` with it, by D75:

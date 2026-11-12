@@ -86,3 +86,4 @@ not answered yet is in `plan.md`, "Open questions".
 | D79 | 2026-11-12 | user | The package `sys-power/axp22x-soft-battery-daemon`: the service is enabled by a preset of systemd; no rule of udev; the unit has the service started before upower (`Before=upower.service`). |
 | D80 | 2026-11-12 | user | Variant B is made first; the discussion goes on. |
 | D81 | 2026-11-12 | user | `axp22x-soft-battery gen-dts` makes the model of the runs as it makes it for the module (the mean of `runs/`, the highest `V_end`, D29, D48) and writes the `.dts` to stdout. No `--run`. |
+| D82 | 2026-11-12 | user | Q13 closed: the modes `daemon`, `gen-dts` (D81), `reset` (moves `runs/` to `archive/`, D47); `gen-dts` writes an overlay by `target-path` to `battery@0` and to the cell; the full paths are read once on the device. |
