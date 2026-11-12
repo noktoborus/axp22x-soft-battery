@@ -263,7 +263,8 @@ learning.
 ```
 
 (D45-D48, D90, D99, D100, D101.) A charge cut before `Full` is printed,
-not kept. A file: lines `KEY=value`, `seq` of 6 digits (D52).
+not kept. Each directory but `full/` keeps at most 100 files; past 100 the
+least `seq` is deleted (D103). A file: lines `KEY=value`, `seq` of 6 digits (D52).
 
 ## The packages
 
@@ -288,8 +289,10 @@ user.
 ## Steps
 
 1. Done: the writes of Rex in the datasheet. Left: where GPIO0 of the AXP
-   goes (the schematic); the full paths of `battery@0` and of
-   `battery-power-supply` in `/proc/device-tree`, for `gen-dts`.
+   goes (the schematic). The paths for `gen-dts`, by the sources
+   (`discussion.md`, "The paths of the nodes"): `/battery@0` and
+   `/axi/pcie@1000120000/rp1/i2c@70000/pmic@34/battery-power-supply`; one
+   look at `/proc/device-tree` on the device confirms them.
 2. Done: the scheme of B on the desk of showcase,
    `shots/3-variant-b.scheme`.
 3. The packages: the script of the copy, the two ebuilds; `linux-mod-r1`
