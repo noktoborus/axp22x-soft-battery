@@ -469,6 +469,19 @@ not the curve.
 ## Open questions
 
 - QB1, QB4: variant B, in "Two variants".
+- Q12. The model in the device tree (D74), proposed:
+  - the table and R: the standard `ocv-capacity-table-0` and
+    `factory-internal-resistance-micro-ohms` of `battery@0`; the capacity:
+    `axp22x-soft-battery,charge-full-microamp-hours` and
+    `axp22x-soft-battery,energy-full-microwatt-hours` on the cell, not the
+    `*-design` ones (those stay the design: upower works the health out of
+    `energy_full` / `energy_full_design`); the end: `end-microvolt` (D73);
+  - a model of the device tree = the table and the two capacities there;
+    with any of them missing, the voltage alone (D58) on what there is;
+  - `model_source`: `default`, `dt` (a model of the device tree), `loaded`
+    (written); `model_commit` = `default` goes back to `dt` if there is one;
+  - after a run the daemon (or `save` of A) writes the model to its log as a
+    piece of the device tree, to be copied into an overlay by hand.
 - Which variant is made first, A or B (D61).
 
 ## Fixed on the review
