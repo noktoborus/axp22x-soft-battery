@@ -66,4 +66,9 @@ RULE module.axp : the AXP is not a store and its gauge is not used
 WHY  the AXP forgets what was written into its registers
 THEN from the AXP the module takes only what it measures and tells now:
      the ADC, the status, the end of the charge; and it sets the PMIC up at
-     each probe
+     each probe, by the device tree only
+RULE module.values : the module has no default value; each setting, the
+     model and each write of a register come from the device tree
+THEN a value missing or bad: a line of `err`, the probe fails
+THEN the defaults are in the overlay of the package,
+     `axp22x-soft-battery.dts`, set there in full

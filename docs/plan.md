@@ -46,12 +46,15 @@ the daemon gives the module nothing (D87).
    `monitored-battery`): the voltages, the current of the charge, the
    energy of design, `ocv-capacity-table-0`,
    `factory-internal-resistance-micro-ohms`.
-3. The set up of the PMIC (D5): the current of the charge (2.1 A), `V_OFF`
-   (0x31) from `voltage-min-design`, the voltage of the full charge, the
-   five writes of Rex (0x30, 0x32, 0x34, 0x36, 0x90; `discussion.md`, "The
-   writes of Rex").
-4. The settings and the model from the device tree ("The device tree"
-   below); each value checked; a bad one: a line of `err`, its default.
+3. The settings and the model from the device tree ("The device tree"
+   below); each value checked. The module has no default of its own
+   (D106): a value missing or bad is a line of `err`, and the probe fails
+   with `-EINVAL`; no battery then.
+4. The set up of the PMIC, all from the device tree (D5, D105): the current
+   of the charge (`constant-charge-current-max-microamp`), `V_OFF` (0x31,
+   `voltage-min-design-microvolt`), the voltage of the full charge
+   (`voltage-max-design-microvolt`) of `battery@0`; then each triple of
+   `axp22x-soft-battery,reg-writes` by `regmap_update_bits()`, in order.
 5. The power supply `axp22x-soft-battery`, `supplied_from = { "axp20x-ac" }`
    (D39); no attributes of its own (D87).
 6. The charger by `power_supply_am_i_supplied()`; the first run of the
@@ -87,13 +90,13 @@ By the voltage always (D90), on two curves (D91):
 | the full state (D40) | 100 % |
 
 - V and I are the means of 30 s; R is `factory-internal-resistance-micro-ohms`
-  of `battery@0`, else 87 mOhm.
+  of `battery@0`.
 - On a discharge the level does not rise (D60); on a charge it does not
   fall (D91).
 - 0 % when the mean of 30 s of the voltage is `end-microvolt` or under
   (D21, D35).
-- The curve of the discharge: `ocv-capacity-table-0`, else the one built in
-  (D59: the mean of the three logs). The curve of the charge:
+- The curve of the discharge: `ocv-capacity-table-0` (D106; the overlay
+  of the package has the mean of the three logs, D59). The curve of the charge:
   `axp22x-soft-battery,charge-cv-table`, else none and none built in: the
   phase of constant voltage then takes the curve of the discharge, the level
   does not fall, and `Full` sets 100 % (D91, D102). By the logs of a charge
@@ -147,34 +150,67 @@ One line at an event, never in a loop; the prefix `axp22x_soft_battery
 axp20x-battery-power-supply:`.
 
 - `bound: charge current 2100 mA, V_OFF 2900 mV, full at 4200 mV`, and the
-  sources: the curve of the discharge (the device tree or built in), the
-  curve of the charge (the device tree or none), R, `energy_full` (D76,
-  D87).
-- `<property> refused: <value>, <why>; the default taken` (`err`).
+  sources: the curve of the charge (the device tree or none), R,
+  `energy_full`, the count of `reg-writes` (D76, D87).
+- `<property> missing` or `<property> refused: <value>, <why>` (`err`),
+  then the probe fails (D106).
 - `full: 4204 mV at 21 mA`; `charger out`; `level 0 %: 3211 mV at 2450 mA`.
 - `AXP silent: 6 samples failed, last -6`; `guard: power off`.
 - `ADC read failed: -5` (rate limited); `suspend`; `resume`; `removed`.
 
 ### Memory
 
-The curve of the discharge (21 × u16), the curve of the charge (up to 16
-pairs of u16), the sums of 30 s, the last sample: under 0.2 KiB. The
-default curve is `const`.
+The curve of the discharge (the table of `battery_info`), the curve of
+the charge (up to 16 pairs of u16), the sums of 30 s, the last sample:
+under 0.2 KiB. No table is built in (D106).
 
 ## The device tree
 
-| node | property | default | what |
-|---|---|---|---|
-| `battery@0` | `ocv-capacity-table-0`, `ocv-capacity-celsius` | the curve built in | the curve of the discharge (D59, D75, D86) |
-| `battery@0` | `factory-internal-resistance-micro-ohms` | 87000 | R (D73, D75) |
-| the cell | `axp22x-soft-battery,energy-full-microwatt-hours` | the design of `battery@0` | `energy_full` (D75, D95) |
-| the cell | `axp22x-soft-battery,end-microvolt` | 3200000 | 0 % (D21, D35, D73) |
-| the cell | `axp22x-soft-battery,charge-cv-table` | none | the curve of the charge: pairs of µA and percent (D91) |
-| the cell | `axp22x-soft-battery,sample-interval-ms` | 10000 | the period of the work (D70, D72) |
-| the cell | `axp22x-soft-battery,full-margin-microvolt` | 50000 | the full state (D39) |
-| the cell | `axp22x-soft-battery,full-current-microamp` | 100000 | the full state (D39) |
-| the cell | `axp22x-soft-battery,silent-samples` | 6 | the silence (D41) |
-| the cell | `axp22x-soft-battery,guard-samples` | 12 | the guard (D71) |
+The module has no default (D106). Every value below is required, but
+`charge-cv-table`; the table gives where it is set and its value there.
+
+- the overlay of the device: `clockworkpi-uconsole-cm5` of the kernel
+  series, not changed by us;
+- the overlay of the package: `axp22x-soft-battery.dtbo`, from
+  `axp22x-soft-battery.dts` of the package `sys-power/axp22x-soft-battery`;
+  the line `dtoverlay=axp22x-soft-battery` goes after the one of the
+  device, by hand (D32);
+- `gen-dts`: an overlay that sets again the learned values only; its line
+  goes after the one of the package.
+
+| node | property | set by | value | what |
+|---|---|---|---|---|
+| `battery@0` | `constant-charge-current-max-microamp` | the device | 2100000 | the current of the charge, 0x33 |
+| `battery@0` | `voltage-max-design-microvolt` | the device | 4200000 | the voltage of the full charge, 0x33 |
+| `battery@0` | `voltage-min-design-microvolt` | the device | 2900000 | `V_OFF`, 0x31 |
+| `battery@0` | `energy-full-design-microwatt-hours` | the device | 24790000 | `energy_full_design` |
+| `battery@0` | `device-chemistry` | the device | `lithium-ion` | `technology` |
+| `battery@0` | `ocv-capacity-table-0`, `ocv-capacity-celsius` | the package, `gen-dts` | the mean of the three logs (D59), at their mean temperature | the curve of the discharge (D75, D86) |
+| `battery@0` | `factory-internal-resistance-micro-ohms` | the package, `gen-dts` | 87000 | R (D73, D75, D104) |
+| the cell | `axp22x-soft-battery,energy-full-microwatt-hours` | the package, `gen-dts` | 24790000 | `energy_full` (D75, D95) |
+| the cell | `axp22x-soft-battery,end-microvolt` | the package, `gen-dts` | 3200000 | 0 % (D21, D35, D73) |
+| the cell | `axp22x-soft-battery,charge-cv-table` | `gen-dts` | none: optional | the curve of the charge: pairs of µA and percent (D91) |
+| the cell | `axp22x-soft-battery,sample-interval-ms` | the package | 10000 | the period of the work (D70, D72) |
+| the cell | `axp22x-soft-battery,full-margin-microvolt` | the package | 50000 | the full state (D39) |
+| the cell | `axp22x-soft-battery,full-current-microamp` | the package | 100000 | the full state (D39) |
+| the cell | `axp22x-soft-battery,silent-samples` | the package | 6 | the silence (D41) |
+| the cell | `axp22x-soft-battery,guard-samples` | the package | 12 | the guard (D71) |
+| the cell | `axp22x-soft-battery,reg-writes` | the package | the five writes of Rex | triples `<reg mask value>` for `regmap_update_bits()` (D105) |
+
+The five writes of Rex (`discussion.md`, "The writes of Rex"):
+
+```dts
+axp22x-soft-battery,reg-writes =
+	<0x30 0x03 0x03>,	/* VBUS: no current limit */
+	<0x32 0x08 0x08>,	/* CHGLED by the charger */
+	<0x34 0x30 0x20>,	/* the output on after the charge; CHGLED type A */
+	<0x36 0x0f 0x0b>,	/* the power key: 10 s, off, no start again */
+	<0x90 0x07 0x00>;	/* GPIO0: output low */
+```
+
+The check of `reg-writes`: a count of cells that divides by 3, at least one
+triple; each value 0x00-0xff; `value & ~mask` = 0. No register is refused
+by its number.
 
 Read once at the probe; a change is a new overlay and a boot.
 
@@ -278,8 +314,10 @@ least `seq` is deleted (D103). A file: lines `KEY=value`, `seq` of 6 digits (D52
   this repository with its sum in the ebuild (D28); `repo-uconsole` of
   `uconsole/linux`.
 - `sys-power/axp22x-soft-battery`: `linux-mod-r1`, `virtual/dist-kernel`;
-  the module and `/etc/modprobe.d/axp22x-soft-battery.conf` (`blacklist
-  axp20x_battery`).
+  the module, `/etc/modprobe.d/axp22x-soft-battery.conf` (`blacklist
+  axp20x_battery`), and `axp22x-soft-battery.dtbo` in `/boot/overlays`,
+  built by `dtc -@` from `axp22x-soft-battery.dts` (D106); its elog gives
+  the line of `config.txt`.
 - `sys-power/axp22x-soft-battery-daemon`: `cargo` (the crates in `CRATES`);
   the program, `axp22x-soft-battery.service`, its preset.
 - `config.txt` is not changed by a package (D32).
@@ -307,7 +345,7 @@ user.
 5. The program: `import` first (the three logs), then `gen-dts`, then
    `daemon`.
 6. The kernel series: 0010 out.
-7. A test on the device: the module with no model (the voltage alone); a
+7. A test on the device: the module with the overlay of the package; a
    model from the three logs by `import` and `gen-dts`; a full charge and a
    discharge to the silence with the daemon.
 
