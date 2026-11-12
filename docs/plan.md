@@ -318,7 +318,8 @@ What did not agree, 2026-11-12, and how it stands now:
   "`charge_full_design` / 256, 35 mAh" in another. With
   `charge_full_design_uah=3337000` in `config.txt` of the device
   (`uconsole-pi-firmware`), / 256 gives 13 mAh, and 512 points end at
-  6.7 Ah, before the end of cells of 9 Ah. Now a fixed 50 mAh (Q5).
+  6.7 Ah, before the end of cells of 9 Ah. Then a fixed 50 mAh; now 80
+  bins that merge when full (D44).
 - R "from dV/dI at steps" in "The model": D34 takes it from the step at
   the start.
 - The run of 3.10 V at 1.9 A was named the run of 2026-11-08; it is the
