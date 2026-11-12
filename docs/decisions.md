@@ -37,3 +37,4 @@ not answered yet is in `plan.md`, "Open questions".
 | D30 | 2026-11-12 | user | The mean model is made when the model is loaded at boot, not when a run is saved. The set of runs may change between boots: runs may be deleted. (The mark of an unchanged source is dropped by D31.) |
 | D31 | 2026-11-12 | user | No cache of the mean: at each load the program reads all runs there are and makes the mean again. No `model.env`. |
 | D32 | 2026-11-12 | user | No package adds anything to `config.txt`. The package of the module tells by `elog` the line to add by hand: `dtoverlay=uconsole-soft-battery` in `[pi5]`, after `dtoverlay=clockworkpi-uconsole-cm5`. |
+| D33 | 2026-11-12 | user | The module takes suspend into account. A suspend breaks the learning: it is dropped, as a failed learning (D17). |

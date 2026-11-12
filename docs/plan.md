@@ -60,6 +60,21 @@ showcase, `shots/1-threads.scheme`.
   return.
 - The rule of `axp_silent` matches its own key only, not each uevent
   `change`.
+- Suspend (D33), by `DEFINE_SIMPLE_DEV_PM_OPS` (suspend and resume;
+  freeze and thaw the same):
+  - suspend: the work is cancelled (`cancel_delayed_work_sync`), so no
+    read of a sleeping bus counts as the silence; a learning that runs
+    is dropped, `learn_state` goes to `idle`, one line in dmesg;
+  - resume: the time of the last sample is set to now, so the first
+    sample does not count the time of the sleep as charge; the charge
+    out in the sleep is not known (the AXP is not a store, D8), so the
+    level starts again by the voltage, as at boot; the work starts
+    again;
+  - after a resume the full state (the marker) starts a learning as
+    always.
+  - Suspend on the CM5 is not in the kernel of Raspberry Pi yet
+    (`uconsole/linux/notes/suspend-cm5.md`): this path cannot be tried on
+    the device now.
 - States of the learning: `idle` → `learning` at each end of a full
   charge (D14); `learning` counts; a new end of a charge starts it again;
   `learning` → `done` at the silence of the AXP: the module makes the
@@ -190,6 +205,8 @@ state".)
 | warn | the AXP silent, no learning | `AXP silent, no learning in progress, uevent sent` |
 | warn | a read of the ADC failed (not the silence) | `ADC read failed: -5`, rate limited |
 | warn | the module removed during the learning | `removed: learning lost, 1234 mAh counted` |
+| info | suspend during the learning | `suspend: learning dropped, 1234 mAh counted` |
+| info | resume | `resume: start level 54 % by voltage: 3711 mV at 1601 mA` |
 
 The power supply itself makes the uevents of `add` and of a change of
 its values; they are not in dmesg.
