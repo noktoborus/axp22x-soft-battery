@@ -52,7 +52,7 @@ agree is listed at the end, "Fixed on the review".
 
 ### The work in time
 
-Proposed (Q3; `discussion.md`, "Q3: the work in time, in full"). The
+D42 (`discussion.md`, "Q3: the work in time, in full"). The
 scheme: desk `uconsole-soft-battery-work` of showcase,
 `shots/1-threads.scheme`.
 
@@ -275,10 +275,6 @@ gives about six lines.
 
 ## Open questions
 
-- Q3. The work in time ("The work in time"): the queue
-  `system_power_efficient_wq`, not deferrable, `round_jiffies_relative`;
-  one mutex; `power_supply_changed()` at a change of `status`, of the
-  integer percent or of `capacity_level`.
 - Q4. The interface: the attributes, the draft and `model_commit`, the
   units, the uevent, the keys of the files, the parameters.
 - Q5. The memory: the points each 50 mAh (fixed), 512 of them.
