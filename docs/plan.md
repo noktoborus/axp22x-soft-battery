@@ -41,9 +41,10 @@ agree is listed at the end, "Fixed on the review".
 - The charger in or out (D39): from `axp20x-ac` of `axp20x_ac_power`, by
   its IRQ: our power supply names it in `supplied_from`, and the class
   calls our `external_power_changed()` at each change; no read of 0x00.
-- No read of 0x01 (D39): the full state is told by the current of the
-  charge. The regmap of the parent is used only for the set up at the
-  probe.
+- Bit 6 of 0x01 (D40): by the regmap of `axp20x` (a read of the bus;
+  0x00-0x01 are volatile), only while the charger is in and the current of
+  the charge is under 100 mA. Else the regmap of the parent serves only the
+  set up at the probe.
 - At each probe the module sets the PMIC up (D5, D36): the current of the
   charge (2.1 A of `battery@0`), `V_OFF` (0x31), the voltage of the full
   charge, and the five writes of Rex of `axp20x_power_probe` (0x30, 0x32,
@@ -72,19 +73,20 @@ Proposed (Q3). The scheme: desk `uconsole-soft-battery-work` of showcase,
 
 ### The marker of the full charge
 
-- The full state (D39): the charger in, the current of the charge (IIO)
-  under 100 mA, the voltage at least `voltage-max-design` − 50 mV
-  (`full_margin_uv`). The AXP ends a charge at 10-15 % of the charge
-  current (210-315 mA at 2.1 A); in the full state the logs show 12-50 mA;
-  so the current falls through 100 mA once, at the end of the charge.
+- The full state (D39, D40): the charger in, the current of the charge
+  (IIO) under 100 mA, the voltage at least `voltage-max-design` − 50 mV
+  (`full_margin_uv`), bit 6 of 0x01 = 0. The AXP ends a charge at 10-15 %
+  of the charge current (210-315 mA at 2.1 A); in the full state the logs
+  show 12-50 mA.
 - Each sample in the full state starts the learning again, silently. The
   learning starts in fact at the edge of the charger going out
   (`external_power_changed()`, `online` 1 → 0) when the last sample before
   it was in the full state (`discussion.md`, "What starts the learning").
-- `status`, proposed (Q1): `Full` in the full state; `Charging` with the
-  charger in and not full; `Discharging` with no charger. `Not charging`
-  is not used: with no read of 0x01 a charge stopped by the AXP and a
-  charge that runs are not told apart, but by the current.
+- `status` (D40): no charger → `Discharging`; the charger in, the current
+  100 mA or more → `Charging`, no read; under 100 mA, bit 6 = 1 →
+  `Charging`; bit 6 = 0 and at the threshold or over → `Full`; bit 6 = 0
+  under it → `Not charging`. upower: `Full` → "fully charged"; `Not
+  charging` → "pending charge", or "fully charged" at 90 % or more.
 
 ### The learning
 
@@ -247,11 +249,6 @@ gives about six lines.
 
 ## Open questions
 
-- Q1. Bit 6 of 0x01 too, by the regmap of `axp20x` (a read of the bus:
-  0x00-0x01 are volatile): read in the work only while the charger is in;
-  the full state = D39 and bit 6 = 0; `status`: `Charging` (bit 6 = 1),
-  `Full`, `Not charging` (bit 6 = 0, not full), `Discharging` (no
-  charger). `get_property` gives the last sample, no read of the bus.
 - Q2. The silence: 3 failed reads in a row, then the work stops.
 - Q3. The work in time: one work each 1 s; one mutex, for sums and copies
   only; `power_supply_changed()` at a change of `status` or of 1 %.
