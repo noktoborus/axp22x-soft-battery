@@ -376,9 +376,14 @@ sum is old. The version stays until a first release. A tarball of a tag
   a heavier load at the end: 7.7 % left at 2.87 A, 5.9 % at 2.45 A, 0 at
   1.94 A, by the curve of 24.10. With a model of one load the level at the
   silence is off by up to 8 %; the count and the voltage agree, so C'
-  does not fix it. Proposed (`discussion.md`, "The best end"): the end
-  is a voltage under load, `V_thr`, the highest `V_end` of the runs (the
-  program takes the highest, not the mean; 3.2 V with no run, D21). The
-  module finds on the table, moved to the current of now, where the
-  voltage reaches `V_thr`, and C' steers the level to 0 % there; the
-  level is 0 % when the mean of 30 s of the voltage is `V_thr` or under.
+  does not fix it. Proposed (`discussion.md`, "The best end", "The end,
+  in full"):
+  - `V_end` of a run: the mean voltage of the last 30 s before the
+    silence, as measured, not moved by I × R;
+  - `V_thr` = the highest `V_end` of all valid runs since the last
+    `reset`, + 10 mV; the program writes it as `MODEL_V_END`; with no run
+    3.2 V (D21);
+  - the module finds on the table, moved to the current of now (R), the
+    point where the voltage reaches `V_thr`; C' steers the level to 0 %
+    there; the level is 0 % at once when the mean of 30 s of the voltage
+    is `V_thr` or under.
