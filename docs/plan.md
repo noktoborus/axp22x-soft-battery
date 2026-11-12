@@ -547,6 +547,16 @@ not the curve.
 - To do for D91: a log of axp-log of a full charge, the device on, from
   low to `Full`, to make the curve of the charge built in.
 
+- Q15. The error after the silence (D93): `-ENODATA`, not `-ENXIO`. In
+  `power_supply_sysfs.c` of `uconsole-7.3`: a read that fails with
+  `-ENODATA` is logged by `dev_dbg_ratelimited` (not seen by default), any
+  other error by `dev_err_ratelimited` ("driver failed to report ...", the
+  lines of the log of 08.11 from `axp20x-battery`), at each read of upower
+  and of the daemon; and a uevent skips a property with `-ENODATA`, but
+  with another error the whole uevent fails (`add_prop_uevent`). The
+  values to fail: `status`, `capacity`, `voltage_now`, `current_now`,
+  `power_now`, `energy_now`; the values of design stay.
+
 ## Fixed on the review
 
 What did not agree, 2026-11-12, and how it stands now:
