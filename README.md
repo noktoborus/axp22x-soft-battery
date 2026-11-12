@@ -34,3 +34,4 @@ State: the design is in work; no code yet.
 | `tools/sim-level.py` | plays the level C' over a log with a model made of another log: the level at the silence and the largest gap, by the weights of the voltage; what the voltage alone says against the count |
 | `tools/sim-end.py` | plays the level with an end by a voltage under load (`V_thr`), a model of one log over another log |
 | `tools/sim-end-mean.py` | the same with the mean model of two logs over the third; also the jump to 0 % |
+| `tools/sim-start.py` | the start level by the voltage alone (a boot in the middle of a discharge), with R and with no R, the mean model of two logs over the third |

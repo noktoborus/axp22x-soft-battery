@@ -365,6 +365,10 @@ sum is old. The version stays until a first release. A tarball of a tag
     change of the options or of `runs/`.
 - The values of the model and of C'. Worked out in `discussion.md`,
   "The values, from two logs". Proposed:
+  - R: proposed now, a constant of the device tree,
+    `uconsole,resistance-micro-ohms = <87000>`, not learned
+    (`discussion.md`, "Why R"). The lines below are the way to learn it,
+    if it is taken after all:
   - R: learned by the module in each run, from the voltage and the
     current of the ADC; not the RDC of the AXP (`module.axp`). One R per
     model, the same through a discharge. Only steps below 50 % count,
