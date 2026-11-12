@@ -292,14 +292,17 @@ gives about six lines.
 
 ## Steps
 
-1. Read: the five writes of Rex (0x30, 0x32, 0x34, 0x36, 0x90) in the
-   datasheet.
+1. Done: the five writes of Rex, read in the datasheet
+   (`discussion.md`, "The writes of Rex"). Left to see: where GPIO0 of the
+   AXP goes on the board (the schematic, the net `AGPIO0`).
 2. Done: the scheme of showcase is in line with D36, D37, D41, D43.
 3. The packages: the script of the copy (D28), the ebuilds; `linux-mod-r1`
    and `cargo` in the cross build of unidev.
 4. The module.
 5. The program.
-6. The kernel series: 0010 out (D4), `bump.sh --sum`.
+6. The kernel series: 0010 stays (D56); its poll from 10 s to 2 min, by a
+   new patch at the end (`kernel.series`) or by an option of modprobe;
+   `bump.sh --sum`.
 7. A test on the device: a full charge, a discharge to the silence, the
    save, the power off, the model at the next boot.
 
