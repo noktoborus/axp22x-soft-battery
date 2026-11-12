@@ -52,10 +52,15 @@ Only in B, proposed (`discussion.md`, "Variant B in full"):
   V × I of its own samples. Not the drivers there are (IIO, `axp20x-ac`):
   that would read the bus twice and lose bit 6 of 0x01 (`discussion.md`,
   "The daemon with the least tie to the module").
-- QB3, decided (D65): a rule of udev on `add` of our battery,
-  `TAG+="systemd"`, `ENV{SYSTEMD_WANTS}="axp22x-soft-battery.service"`; no
-  `Restart=`. At its start the daemon writes the mean model (`model_*`,
-  `model_commit`); no `IMPORT{program}`.
+- QB3, decided (D65, D68): the daemon runs from the boot, a service of
+  systemd, enabled; no `Restart=`. Each 1 s it looks at
+  `/sys/class/power_supply/axp22x-soft-battery/` (proposed: by a read of
+  `model_source`): not there, it waits; there with `model_source` =
+  `default` while it has a model, it writes the model (`model_*`,
+  `model_commit`): at the first sight, and again after the module was
+  loaded again. No rule of udev for it. Proposed: a read each second, not
+  inotify (sysfs does not tell of new directories by inotify) and not the
+  netlink of uevents (a crate or code of sockets).
 - QB4. The learning in the daemon: the start at `status` from `Full` to
   `Discharging`; R by the step at the start (D34); the curve at full
   resolution in its memory (no bins); the end at `health` = `Dead` or the
