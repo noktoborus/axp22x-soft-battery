@@ -544,6 +544,9 @@ not the curve.
   `import` of the program for the logs of axp-log; (4) the daemon moves the
   oldest run to `archive/`; `reset` may go.
 
+- To do for D91: a log of axp-log of a full charge, the device on, from
+  low to `Full`, to make the curve of the charge built in.
+
 ## Fixed on the review
 
 What did not agree, 2026-11-12, and how it stands now:
