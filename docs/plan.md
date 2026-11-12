@@ -207,7 +207,11 @@ its values; they are not in dmesg.
 
 - The values of C' (D23): 30 s, f in 0.5..2, 30 %, 10 %; to check by
   the level at the silence, in dmesg.
-- One module (count, learning, level) or two.
+- One module (count, learning, level) or two. Worked out in
+  `discussion.md`, "One module or two". Proposed: one module, one
+  platform driver, one work each 1 s; the code in files by part (set
+  up, sample and count, learning, level, sysfs); the values of C' are
+  parameters writable at run time, so no reload is needed to tune them.
 - The program of user space: in the package of the module or in its own.
 - The line `dtoverlay=uconsole-battery` of `config.txt`: by
   `uconsole-pi-firmware` (a USE flag), or by hand.
