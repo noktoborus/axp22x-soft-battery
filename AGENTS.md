@@ -52,8 +52,9 @@ RULE module.minimal : the module does its job and nothing more: no
      fallback, no retry, no workaround
 THEN logic that guards against a failure of user space is a separate
      module, made only when it is needed
-EX-  a call of `hw_protection_trigger()` when user space does not power
-     off in time
+EX-  a call of `hw_protection_trigger()` in the main module when user
+     space does not power off in time
+EX+  that call in `uconsole_axp_guard`, a module of its own (D57)
 EX-  a uevent sent again every 10 s while the AXP is silent
 RULE module.impact : the module weighs as little as it can on the running
      system: as few locks as it can, the interfaces of the drivers there

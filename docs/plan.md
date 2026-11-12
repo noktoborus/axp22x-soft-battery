@@ -287,6 +287,11 @@ gives about six lines.
   takes the crates from crates.io by `CRATES` (`cargo_crate_uris`), each
   with its line in `Manifest`; that `lto = "fat"` of `Cargo.toml` holds
   under the `cargo` eclass is to see in the log of the build.
+- The guard (D57): `uconsole_axp_guard`, a module of its own in the
+  package of the module, loaded by
+  `/usr/lib/modules-load.d/uconsole-axp-guard.conf`; each 10 s it reads
+  `online` of `axp20x-ac`; 12 errors in a row → `hw_protection_trigger()`;
+  `system_freezable_wq`, no code of suspend; about 60 lines.
 - Put off: the module in the tree of the kernel,
   `plans/uconsole-soft-battery-in-tree.md`.
 
@@ -300,28 +305,13 @@ gives about six lines.
    and `cargo` in the cross build of unidev.
 4. The module.
 5. The program.
-6. The kernel series: 0010 stays (D56); its poll from 10 s to 2 min, by a
-   new patch at the end (`kernel.series`) or by an option of modprobe;
-   `bump.sh --sum`.
+6. The kernel series: 0010 out (D4, D57), `bump.sh --sum`.
 7. A test on the device: a full charge, a discharge to the silence, the
    save, the power off, the model at the next boot.
 
 ## Open questions
 
-- Q8. The guard of the silence as a short module of its own, in place of
-  patch 0010 (`discussion.md`, "The guard as a module"), proposed:
-  - `uconsole_axp_guard`, about 60 lines, in our package, loaded by
-    `/usr/lib/modules-load.d/uconsole-axp-guard.conf`;
-  - each 10 s (`system_freezable_wq`: no run between the freeze and the
-    thaw of a suspend, so no code of suspend) it reads `online` of
-    `axp20x-ac` by `power_supply_get_by_name()` and
-    `power_supply_get_property()`: `axp20x_ac_power` reads 0x00 of the AXP
-    for it; a silent AXP gives an error;
-  - 12 errors in a row (about 2 min) → `hw_protection_trigger("AXP
-    silent", 20000)`; one good read sets the count to 0;
-  - dmesg: the first error, the trigger; the parameters `poll_ms` (10000),
-    `fails` (12);
-  - then 0010 leaves the series again (D56 changed; the series, D4).
+None.
 
 ## Fixed on the review
 
