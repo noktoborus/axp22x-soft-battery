@@ -469,7 +469,7 @@ not the curve.
 ## Open questions
 
 - QB1, QB4: variant B, in "Two variants".
-- Q12. The model in the device tree (D74), proposed:
+- Q12, decided (D75). The model in the device tree (D74):
   - the table and R: the standard `ocv-capacity-table-0` and
     `factory-internal-resistance-micro-ohms` of `battery@0`; the capacity:
     `axp22x-soft-battery,charge-full-microamp-hours` and
