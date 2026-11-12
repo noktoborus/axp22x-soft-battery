@@ -17,7 +17,7 @@ not answered yet is in `plan.md`, "Open questions".
 | D10 | 2026-11-12 | user | Assumed: `poweroff` on the CM5 cuts the power of the whole device. |
 | D11 | 2026-11-12 | user | The module never powers the system off; only user space decides. |
 | D12 | 2026-11-12 | user | No more logic and no workarounds in the kernel module. A guard against a failure of user space, when it is needed, is a separate module. |
-| D13 | 2026-11-12 | user | The model reaches the module at boot by a rule of udev on the event `add` of its power supply: `IMPORT{file}` of `/var/lib/uconsole-battery/model.env`, `ATTR{}` into the attributes of the module. Not modprobe.d: it gives no options to a module built in. |
+| D13 | 2026-11-12 | user | The model reaches the module at boot by a rule of udev on the event `add` of its power supply: `IMPORT{file}` of `/var/lib/uconsole-soft-battery/model.env`, `ATTR{}` into the attributes of the module. Not modprobe.d: it gives no options to a module built in. |
 | D14 | 2026-11-12 | user | The learning starts each time a charge ends in full; no start by hand. |
 | D15 | 2026-11-12 | user | The module tells its events in dmesg: it is loaded, the model is awaited, the learning started, the learning done, and others (the list in `plan.md`). |
 | D16 | 2026-11-12 | user | While the learning runs, it is kept in the memory of the module only; the memory is to be small. At its end a uevent makes user space write the state file. |
@@ -30,3 +30,4 @@ not answered yet is in `plan.md`, "Open questions".
 | D23 | 2026-11-12 | user | The level is C': the count, its speed scaled by the voltage. On a discharge the level falls at the speed of the count times f = (left by the voltage) / (left by the count), f in 0.5..2, and never rises; the voltage weighs nothing above 30 % and in full at 10 %; the means of V and I over 30 s. On the charger the count only; the end of the charge sets 100 %. The values are a first guess. |
 | D24 | 2026-11-12 | user | One module: the set up, the count, the learning and the level in one driver; the code in files by part. The values of C' are parameters writable at run time. |
 | D25 | 2026-11-12 | user | The program of user space is a package of its own, apart from the package of the module. It is written in Rust. |
+| D26 | 2026-11-12 | user | The name is `uconsole-soft-battery`: the repository `uconsole-soft-battery`, the module `uconsole_soft_battery`, the power supply `uconsole-soft-battery`, the compatible `uconsole,soft-battery`, the overlay `uconsole-soft-battery.dtbo`, the package of the module `sys-power/uconsole-soft-battery`, the package of the program `sys-power/uconsole-soft-battery-tools`, the state `/var/lib/uconsole-soft-battery/`. |

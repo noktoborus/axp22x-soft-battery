@@ -8,7 +8,7 @@ Not decided where it says "proposed".
 
 ### The module
 
-- One power supply of type Battery, `uconsole-battery`: `status`,
+- One power supply of type Battery, `uconsole-soft-battery`: `status`,
   `present`, `voltage_now`, `current_now`, `charge_full` (learned),
   `charge_full_design` (device tree), `charge_now`, `capacity`,
   `energy_*`, `time_to_empty`. Its own attributes: `learn_state`,
@@ -80,7 +80,7 @@ curve stays in the module; user space does not read it.
 
 Required: the module loaded, the model awaited, the learning started,
 the learning done (D15). Proposed: the whole list. Each is one line, at
-an event, never in a loop. `dev_*` of the device `uconsole-battery`.
+an event, never in a loop. `dev_*` of the device `uconsole-soft-battery`.
 
 | level | when | text, about |
 |---|---|---|
@@ -141,7 +141,7 @@ its values; they are not in dmesg.
 ### User space
 
 - A rule of udev on the uevent `axp_silent`: `RUN+="/usr/bin/systemctl
-  start --no-block uconsole-battery-save.service"`; udev kills a long
+  start --no-block uconsole-soft-battery-save.service"`; udev kills a long
   `RUN`. A service started so does not get the keys of the event: the
   program reads the same values from sysfs. At `done` the module puts the
   new model into its attributes `model_*`, the ones the rule of D13
@@ -149,7 +149,7 @@ its values; they are not in dmesg.
 - The program takes two events (D19):
   - the AXP silent: a forced power off;
   - the AXP silent and a model: it writes the model into the state file
-    `/var/lib/uconsole-battery/model.env` (the attributes `model_*`, as
+    `/var/lib/uconsole-soft-battery/model.env` (the attributes `model_*`, as
     they are), syncs, then a forced power off.
 - It runs only at that event: no daemon, no write to the disk during the
   learning (D16, D20).
@@ -159,8 +159,8 @@ its values; they are not in dmesg.
 - The model reaches the module at boot by a rule of udev (D13), on the
   event `add` of the power supply:
   ```
-  ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="uconsole-battery", \
-    IMPORT{file}="/var/lib/uconsole-battery/model.env", \
+  ACTION=="add", SUBSYSTEM=="power_supply", KERNEL=="uconsole-soft-battery", \
+    IMPORT{file}="/var/lib/uconsole-soft-battery/model.env", \
     ATTR{model_q_full}="$env{Q_FULL}", ATTR{model_ocv}="$env{OCV}", ...
   ```
   `IMPORT{file}` reads lines `KEY=value`; `ATTR{}` writes them into the
@@ -178,14 +178,17 @@ its values; they are not in dmesg.
 
 Two packages (D6, D25).
 
-- The module, proposed: `sys-power/uconsole-battery` in repo-uconsole;
+- The module: `sys-power/uconsole-soft-battery` (D26) in repo-uconsole;
   `linux-mod-r1`, depends on `virtual/dist-kernel`; the overlay
-  `uconsole-battery.dtbo` by `dtc -@` into `/boot/overlays`.
+  `uconsole-soft-battery.dtbo` by `dtc -@` into `/boot/overlays`.
 - The overlay: `target-path` to the node `battery-power-supply`,
-  `status = "disabled"`; a node `compatible = "uconsole,battery"` at the
+  `status = "disabled"`; a node `compatible = "uconsole,soft-battery"` at the
   root, so that udev loads the module by its alias.
-- The program (D25), in Rust, proposed: `sys-power/uconsole-battery-save`,
-  by the eclass `cargo`. It holds all of user space: the program, the
+- The program (D25), in Rust: `sys-power/uconsole-soft-battery-tools`
+  (D26), by the eclass `cargo`. Proposed: one program
+  `uconsole-soft-battery` with commands; `save` is the first (the work at
+  the silence); the service `uconsole-soft-battery-save.service` runs
+  it. It holds all of user space: the program, the
   rule of udev of the silence, the rule of udev of the model at boot
   (D13), the service. It depends on the package of the module.
 - Proposed: the program takes no crate, only `std`: it reads sysfs,
@@ -218,18 +221,17 @@ Two packages (D6, D25).
 
 - The values of C' (D23): 30 s, f in 0.5..2, 30 %, 10 %; to check by
   the level at the silence, in dmesg.
-- The line `dtoverlay=uconsole-battery` of `config.txt`. Worked out in
+- The line `dtoverlay=uconsole-soft-battery` of `config.txt`. Worked out in
   `discussion.md`, "The line of config.txt". Proposed: `config.txt` of
-  `uconsole-pi-firmware` gets once a line `include uconsole-battery.txt`
+  `uconsole-pi-firmware` gets once a line `include uconsole-soft-battery.txt`
   at its end; the package of the module installs
-  `/boot/uconsole-battery.txt` (`[pi5]`, `dtoverlay=uconsole-battery`).
+  `/boot/uconsole-soft-battery.txt` (`[pi5]`, `dtoverlay=uconsole-soft-battery`).
   The package in place turns the new way on, the package gone turns it
   off. To check on the device: a missing file of `include` does not stop
   the boot; a section in the included file. Else: a USE flag of
   `uconsole-pi-firmware`.
 - How the ebuilds in repo-uconsole take the source of this repository
   (`package.self` of `uconsole/linux/AGENTS.md`).
-- The names of the two packages.
 - The capacity depends on the load (9067 mAh at 1.6 A): keep the last run,
   or a mean of some runs; and who makes the mean.
 - The values of the model: the step of the current for `R` (200 mA), the

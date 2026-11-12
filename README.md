@@ -1,6 +1,7 @@
-# uconsole-battery
+# uconsole-soft-battery
 
-The battery of the uConsole with a CM5: a kernel module that learns the
+The battery of the uConsole with a CM5, counted in software ("soft"),
+not by the gauge of the PMIC: a kernel module that learns the
 cells from a full charge down to the point where the PMIC AXP228 goes
 silent, and shows the level of the charge by what it learned. User space
 saves the model and powers the system off.
