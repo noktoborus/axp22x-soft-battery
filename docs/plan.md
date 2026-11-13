@@ -340,11 +340,11 @@ holds it:
   `discharge/full/` + 50 mV (D35, D48); never of `partial/`, which has no
   `V_end`;
 - the curve of the charge: the mean of the runs of `charge/full/` on a
-  grid of the percent, a step of 2 %, from the start of the phase of
-  constant voltage to 100 %; the percent of a point of a run is counted
-  back from `Full`, 100 − (the charge in after it) / `Q_full`; at each step
-  of the grid the current of each run, then the mean of the runs; at most
-  16 pairs (D110); `axp22x-soft-battery,charge-cv-table` on the node.
+  grid of the percent, a step of 2 %, from the lowest start of the phase
+  of constant voltage of the runs to 100 %; the percent of a point of a
+  run is counted back from `Full`, 100 − (the charge in after it) /
+  `Q_full`; at each step of the grid the mean current of the runs that
+  have that step (D128); at most 16 pairs (D110); `axp22x-soft-battery,charge-cv-table` on the node.
 
 With nothing worked out, a line and the exit code 1. Not written ever:
 the settings of the work and `reg-writes`. An overlay `.dts` with
@@ -409,8 +409,7 @@ user.
 3. Done: the packages (D108): `package.sh`, the two ebuilds, skeletons
    of the module and of the program, the overlay of the package. Left:
    `linux-mod-r1` and `cargo` in the cross build of unidev (no docker
-   here; the module not compiled yet: this container has no flex and no
-   bison for the tree of the kernel).
+   here).
 4. Done: the module (D114, D115), `module/`: `main.c`, `dt.c`, `pmic.c`,
    `level.c`, `work.c`, `props.c`, `sb.h`; built against
    the tree of `uconsole-7.3` (x86, `W=1`, no warning), not yet on the

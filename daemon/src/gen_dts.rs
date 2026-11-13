@@ -113,12 +113,13 @@ fn current_at(points: &[(f64, f64)], pct: f64) -> Option<f64> {
     })
 }
 
-/// The curve of the charge: on a grid of 2 % common to the runs, the mean
-/// current; pairs with the current falling, at most 16, the last ones.
+/// The curve of the charge: on a grid of 2 %, at each step the mean current
+/// of the runs that have that step; pairs with the current falling, at
+/// most 16, the last ones.
 fn mean_cv(charges: &[EnvFile], q_full: f64) -> Option<Vec<(i64, i64)>> {
     let runs: Vec<Vec<(f64, f64)>> =
         charges.iter().filter_map(|r| charge_points(r, q_full)).collect();
-    let start = runs.iter().map(|p| p[0].0).fold(f64::MIN, f64::max);
+    let start = runs.iter().map(|p| p[0].0).fold(f64::MAX, f64::min);
     if runs.is_empty() || start >= 100.0 {
         return None;
     }
@@ -126,7 +127,7 @@ fn mean_cv(charges: &[EnvFile], q_full: f64) -> Option<Vec<(i64, i64)>> {
     let mut pairs: Vec<(i64, i64)> = Vec::new();
     for pct in (first..=100).step_by(CV_STEP as usize) {
         let at: Vec<f64> = runs.iter().filter_map(|p| current_at(p, pct as f64)).collect();
-        if at.len() != runs.len() {
+        if at.is_empty() {
             continue;
         }
         let ua = (at.iter().sum::<f64>() / at.len() as f64).round() as i64;
@@ -231,4 +232,25 @@ pub fn run(dir: &Path, use_partial: bool) -> Result<ExitCode> {
     }
     print!("{}", dts(&v));
     Ok(ExitCode::SUCCESS)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn charge(q_after: &str, i: &str) -> EnvFile {
+        let mut e = EnvFile::default();
+        e.set("CV_Q_AFTER_UAH", q_after);
+        e.set("CV_I_UA", i);
+        e
+    }
+
+    #[test]
+    fn a_short_charge_does_not_cut_the_curve() {
+        let long = charge("200,100,0", "1000,500,100");
+        let short = charge("50,0", "400,200");
+        let pairs = mean_cv(&[long, short], 1000.0).unwrap();
+        assert_eq!(pairs.first(), Some(&(1000, 80)));
+        assert_eq!(pairs.last(), Some(&(150, 100)));
+    }
 }
