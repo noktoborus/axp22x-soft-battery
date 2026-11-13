@@ -416,16 +416,19 @@ user.
    device.
 5. Done: the program (D117), `daemon/src/`; `import` of the three logs
    and `gen-dts` tried here; `daemon` not yet on the device.
-6. The kernel series: 0010 out.
+6. The kernel series: the file of 0010 deleted from
+   `files/patches/uconsole-7.3/`. Left to the user: `kernel/bump.sh
+   --sum` and the commit in `uconsole/linux`.
 7. A test on the device: the module with the overlay of the package; a
    model from the three logs by `import` and `gen-dts`; a full charge and a
    discharge to the silence with the daemon.
 
 ## Open questions
 
-- With the defaults of upower (the critical action at 2 %), a run is broken
-  off before the silence (D97): it goes to `discharge/partial/` (D99); whole runs,
-  and so `V_end`, come only if the user sets upower so, or by `import`.
+None. upower is not dealt with (D130): with its defaults a run is broken
+off at 2 %, before the silence, and goes to `discharge/partial/` (D99);
+whole runs, and so `V_end`, come if the user sets upower so, or by
+`import`.
 
 ## Variant A, kept apart
 
