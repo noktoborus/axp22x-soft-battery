@@ -139,13 +139,15 @@ By the voltage always (D90), on two curves (D91):
   `constant-charge-voltage-max` − `full-margin-microvolt` or over → `Full` (the full
   state); bit 6 = 0 under it → `Not charging`.
 
-### The properties (D43, D55, D92-D95)
+### The properties (D43, D55, D92-D95, D127)
 
 `present`, `status`, `technology` (from `device-chemistry`), `capacity`,
-`voltage_now`, `current_now` (negative on a discharge), `power_now`
-(V × I), `energy_now` (the level × `energy_full`), `energy_full`
-(`energy-full-microwatt-hours` of the node), `energy_full_design` (the
-cells), `voltage_min_design`, `voltage_max_design`,
+`voltage_now`, `voltage_ocv` (D120), `current_now` (negative on a
+discharge), `power_now` (V × I), `energy_now` (the level × `energy_full`),
+`energy_full` (`energy-full-microwatt-hours` of the node),
+`energy_full_design` (the cells), `voltage_min_design`,
+`voltage_max_design`, `voltage_min` (V_OFF) and `voltage_max` (the target
+of the charge), `in0_min` and `in0_max` of hwmon (D127),
 `constant_charge_current_max`, `internal_resistance` (the R in use),
 `scope` (System).
 

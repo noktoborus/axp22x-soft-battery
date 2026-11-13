@@ -30,12 +30,18 @@ static const enum power_supply_property sb_props[] = {
 	POWER_SUPPLY_PROP_ENERGY_FULL_DESIGN,
 	POWER_SUPPLY_PROP_VOLTAGE_MIN_DESIGN,
 	POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN,
+	POWER_SUPPLY_PROP_VOLTAGE_MIN,
+	POWER_SUPPLY_PROP_VOLTAGE_MAX,
 	POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX,
 	POWER_SUPPLY_PROP_INTERNAL_RESISTANCE,
 	POWER_SUPPLY_PROP_SCOPE,
 };
 
-/* The values that do not change; -ENOENT for the others. */
+/*
+ * The values that do not change; -ENOENT for the others. voltage_min is
+ * V_OFF and voltage_max the target of the charge, as written to the PMIC;
+ * hwmon shows them as in0_min and in0_max.
+ */
 static int sb_get_fixed(struct sb *sb, struct power_supply_battery_info *info,
 			enum power_supply_property psp,
 			union power_supply_propval *val)
@@ -58,6 +64,12 @@ static int sb_get_fixed(struct sb *sb, struct power_supply_battery_info *info,
 		return 0;
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
 		val->intval = info->voltage_max_design_uv;
+		return 0;
+	case POWER_SUPPLY_PROP_VOLTAGE_MIN:
+		val->intval = info->voltage_min_design_uv;
+		return 0;
+	case POWER_SUPPLY_PROP_VOLTAGE_MAX:
+		val->intval = info->constant_charge_voltage_max_uv;
 		return 0;
 	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_CURRENT_MAX:
 		val->intval = info->constant_charge_current_max_ua;
