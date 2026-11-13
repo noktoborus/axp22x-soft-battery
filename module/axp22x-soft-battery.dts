@@ -25,8 +25,16 @@
  *		3300000 by 100000; not over end.
  *	end	the voltage of 0 % with no charger, in uV:
  *		axp22x-soft-battery,end-microvolt. From v_off to 3800000.
+ *	energy_full_design_uwh
+ *		the energy of the design of the cells, in uWh:
+ *		energy-full-design-microwatt-hours of the cells. More than
+ *		0. The name is the one of clockworkpi-custom-battery.
  *
  *	dtoverlay=axp22x-soft-battery,v_off=3000000,end=3250000
+ *	dtparam=energy_full_design_uwh=33309000
+ *
+ * A line of config.txt is cut after 98 characters, with no warning. Put
+ * a long list of parameters on lines of dtparam= after the dtoverlay=.
  */
 
 /dts-v1/;
@@ -104,7 +112,10 @@
 				 * rounded up.
 				 */
 				voltage-min-design-microvolt = <2900000>;
-				/* The energy of the design, in uWh. More than 0. */
+				/* The energy of the design, in uWh. More than 0. The
+				 * health of the battery is the energy of the full charge
+				 * of the node above over this one.
+				 */
 				energy-full-design-microwatt-hours = <24790000>;
 				/* The target of the charge, in uV: 4100000, 4200000,
 				 * 4220000 or 4240000; a value between them is rounded down.
@@ -136,5 +147,6 @@
 	__overrides__ {
 		v_off = <&axp22x_soft_battery_cells>,"voltage-min-design-microvolt:0";
 		end = <&axp22x_soft_battery>,"axp22x-soft-battery,end-microvolt:0";
+		energy_full_design_uwh = <&axp22x_soft_battery_cells>,"energy-full-design-microwatt-hours:0";
 	};
 };

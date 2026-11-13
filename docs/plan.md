@@ -232,7 +232,7 @@ are not read: the values of design are set again in the cells.
 | the cells | `constant-charge-voltage-max-microvolt` | the package | 4200000 | the voltage of the full charge, 0x33; the full state (D112) |
 | the cells | `voltage-max-design-microvolt` | the package | 4200000 | `voltage_max_design` |
 | the cells | `voltage-min-design-microvolt` | the package | 2900000 | `V_OFF`, 0x31 |
-| the cells | `energy-full-design-microwatt-hours` | the package | 24790000 | `energy_full_design` |
+| the cells | `energy-full-design-microwatt-hours` | the package, `energy_full_design_uwh` | 24790000 | `energy_full_design` (D125) |
 | the cells | `device-chemistry` | the package | `lithium-ion` | `technology` |
 | the cells | `ocv-capacity-table-0`, `ocv-capacity-celsius` | the package, `gen-dts` | the mean of the three logs (D59), at their mean temperature | the curve of the discharge (D75, D86) |
 | the cells | `factory-internal-resistance-micro-ohms` | the package, `gen-dts` | 87000 | R (D73, D75, D104) |
