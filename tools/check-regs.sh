@@ -177,8 +177,21 @@ check_v_off
 check_charge_voltage
 check_charge_current
 check_reg_writes
-if v=$(reg 0x33); then
-	[ $((v & 128)) -ne 0 ] && echo "the charge is on (0x33 bit 7)" ||
-		echo "the charge is off (0x33 bit 7)"
-fi
+
+# The state of the charger: a bit set or not, with a text for each.
+bit() {
+	v=$(reg "$1") || return
+	if [ $((v & (1 << $2))) -ne 0 ]; then
+		echo "$1 bit $2: $3"
+	else
+		echo "$1 bit $2: $4"
+	fi
+}
+
+echo
+bit 0x33 7 "the charger is enabled: it charges when there is power" \
+	"the charger is disabled"
+bit 0x00 7 "ACIN is there" "no ACIN"
+bit 0x00 5 "VBUS is there" "no VBUS"
+bit 0x01 6 "the cells are charged now" "the cells are not charged now"
 exit $FAIL
