@@ -303,8 +303,8 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
   percent back from 100 % by the charge in and `Q_full`; the points of the
   phase of constant voltage give the curve of the charge (the current →
   the percent); the check, then `charge/full/<seq>.env` or
-  `charge/invalid/<seq>.env`; past 5, the short ones first, then the
-  oldest, to `charge/archive/` (D126).
+  `charge/invalid/<seq>.env`; past 5, the highest voltage at the start
+  first, then the oldest, to `charge/archive/` (D126).
 - What ends a run, with a line in the journal, and the daemon exits (D89,
   D97): a suspend (by `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`, D66, D69); a
   gap of over 60 s between two reads; the directory of the battery gone; a
@@ -366,7 +366,7 @@ learning.
 │   ├── invalid/   the runs that failed the check
 │   └── partial/   the runs cut short before the silence (D99)
 └── charge/
-    ├── full/      5 charges that reached Full, the short ones out first (the curve of the charge)
+    ├── full/      5 charges that reached Full, the one that started highest out first (the curve of the charge)
     ├── archive/   those past 5
     └── invalid/   those that failed the check
 ```

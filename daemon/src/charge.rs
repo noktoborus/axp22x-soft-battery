@@ -77,6 +77,7 @@ impl Charge {
         env.set("SECONDS", self.seconds().round() as i64);
         env.set("READS", self.points.len());
         env.set("Q_IN_UAH", self.q_in_uah().round() as i64);
+        env.set("START_V_UV", self.points.first().map_or(0, |p| p.v_uv));
         env.set("V_END_UV", self.v_end());
         env.set("CV_Q_AFTER_UAH", join(&cv.q_after_uah));
         env.set("CV_I_UA", join(&cv.i_ua));
