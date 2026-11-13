@@ -11,7 +11,8 @@
 //! ```
 //!
 //! A file is `<seq>.env`, six digits; seq is 1 + the highest of the kind.
-//! full/ keeps 5, the others 100: past it the least seq goes.
+//! full/ keeps 5, the others 100: past it the least seq goes. Past 5 in
+//! charge/full/ the short charges go first (`leave_order`).
 
 use std::fs;
 use std::io::Write;
@@ -22,6 +23,9 @@ use crate::Result;
 
 const FULL_KEEP: usize = 5;
 const OTHER_KEEP: usize = 100;
+/// A charge with fewer points of the phase of constant voltage than this
+/// percent of the longest one in full/ is short.
+const CHARGE_SHORT_PCT: usize = 80;
 
 pub const DISCHARGE: &str = "discharge";
 pub const CHARGE: &str = "charge";
@@ -73,11 +77,63 @@ fn trim(dir: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Past 5 in full/ the least seq goes to archive/.
+/// A charge seen from before its phase of constant voltage: then not all
+/// the charge came in that phase.
+fn charge_whole(env: &EnvFile) -> bool {
+    let first = env.get_list("CV_Q_AFTER_UAH").and_then(|q| q.first().copied());
+    matches!((first, env.get_i64("Q_IN_UAH")), (Some(f), Some(q)) if f < q)
+}
+
+/// The order in which the charges leave full/: first those that started
+/// in the phase of constant voltage, then those with fewer points of it
+/// than CHARGE_SHORT_PCT of the longest, each the fewest points first;
+/// then the least seq. A file that cannot be read counts as started in
+/// that phase, with no point.
+fn charge_leave_order(runs: &[(u32, Option<EnvFile>)]) -> Vec<u32> {
+    let points = |e: &Option<EnvFile>| {
+        e.as_ref().and_then(|e| e.get_list("CV_I_UA")).map_or(0, |l| l.len())
+    };
+    let longest = runs.iter().map(|(_, e)| points(e)).max().unwrap_or(0);
+    let mut order: Vec<(u8, usize, u32)> = runs
+        .iter()
+        .map(|(seq, e)| {
+            let n = points(e);
+            let group = if !e.as_ref().is_some_and(charge_whole) {
+                0
+            } else if n * 100 < longest * CHARGE_SHORT_PCT {
+                1
+            } else {
+                return (2, 0, *seq);
+            };
+            (group, n, *seq)
+        })
+        .collect();
+    order.sort_unstable();
+    order.into_iter().map(|(_, _, seq)| seq).collect()
+}
+
+/// The seqs of full/ in the order they leave: for a charge by
+/// `charge_leave_order`, else the least seq first.
+fn leave_order(kind_dir: &Path, full: &Path) -> Vec<u32> {
+    let s = seqs(full);
+    if kind_dir.file_name().is_none_or(|n| n != CHARGE) {
+        return s;
+    }
+    let runs: Vec<(u32, Option<EnvFile>)> = s
+        .into_iter()
+        .map(|seq| {
+            let text = fs::read_to_string(file(full, seq)).ok();
+            (seq, text.and_then(|t| EnvFile::parse(&t).ok()))
+        })
+        .collect();
+    charge_leave_order(&runs)
+}
+
+/// Past 5 in full/ the first of `leave_order` go to archive/.
 fn rotate_full(kind_dir: &Path) -> Result<()> {
     let full = kind_dir.join("full");
     let archive = kind_dir.join("archive");
-    let s = seqs(&full);
+    let s = leave_order(kind_dir, &full);
     for seq in s.iter().take(s.len().saturating_sub(FULL_KEEP)) {
         fs::create_dir_all(&archive)?;
         fs::rename(file(&full, *seq), file(&archive, *seq))?;
@@ -115,4 +171,31 @@ pub fn load(dir: &Path, kind: &str, sub: &str) -> Result<Vec<(PathBuf, EnvFile)>
             Ok((path, env))
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn charge(q_in: i64, q_after: &[i64]) -> Option<EnvFile> {
+        let mut e = EnvFile::default();
+        e.set("Q_IN_UAH", q_in);
+        e.set("CV_Q_AFTER_UAH", crate::envfile::join(q_after));
+        e.set("CV_I_UA", crate::envfile::join(&vec![1; q_after.len()]));
+        Some(e)
+    }
+
+    #[test]
+    fn short_charges_leave_first() {
+        let runs = vec![
+            (1, charge(3000, &[900; 100])),
+            (2, charge(500, &[500; 30])),
+            (3, charge(3000, &[900; 95])),
+            (4, charge(3000, &[400; 50])),
+            (5, None),
+            (6, charge(3000, &[900; 90])),
+            (7, charge(400, &[400; 10])),
+        ];
+        assert_eq!(charge_leave_order(&runs), vec![5, 7, 2, 4, 1, 3, 6]);
+    }
 }
