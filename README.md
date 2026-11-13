@@ -42,3 +42,4 @@ the program do no work yet.
 | `tools/sim-start.py` | the start level by the voltage alone (a boot in the middle of a discharge), with R and with no R, the mean model of two logs over the third |
 | `tools/make-curve.py` | from logs to the silence: the default curve OCV by the percent left, its spread, the error of the level by the voltage alone; the table for the module and for the device tree |
 | `tools/plot-curves.py` | the curves of the logs and their mean as an SVG (for the desk of showcase; `convert -density 144` makes the PNG) |
+| `tools/check-regs.sh` | on the device: the values of the device tree against the registers of the AXP (`i2cget`) and the properties of the module; V_OFF, the target and the current of the charge, each reg-write |
