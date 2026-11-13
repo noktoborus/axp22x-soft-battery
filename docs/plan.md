@@ -391,7 +391,7 @@ least `seq` is deleted (D103). A file: lines `KEY=value`, `seq` of 6 digits (D52
   the program, `axp22x-soft-battery.service`, its preset.
 - `config.txt` is not changed by a package (D32).
 - Put off: the module in the tree of the kernel,
-  `plans/axp22x-soft-battery-in-tree.md`.
+  `in-tree.md` of the branch `plans`.
 
 ## The kernel series
 
