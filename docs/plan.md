@@ -172,7 +172,7 @@ energy (`discussion.md`, "What upower reads, and what soft-battery gives").
 
 The work is cancelled at suspend; at resume the time of the last sample is
 set to now and the work goes on. Not to be tried on the CM5 now
-(`uconsole/linux/notes/suspend-cm5.md`).
+(suspend is not tried on the CM5 yet).
 
 ### dmesg (D15)
 
@@ -354,7 +354,7 @@ it into `config.txt` by hand (D32, D87).
 ### `axp22x-soft-battery import <log>`
 
 A log of axp-log, from the full state to the silence, into a run of
-`discharge/full/` (D90, D100). The three logs of `uconsole/hardware/tools/axp-log/dump/`
+`discharge/full/` (D90, D100). The three logs of the dumps of axp-log
 give a model of the device tree at once, and serve as tests of the
 learning.
 
@@ -380,8 +380,8 @@ least `seq` is deleted (D103). A file: lines `KEY=value`, `seq` of 6 digits (D52
 ## The packages
 
 - The source is a copy in `files/` of each package, made by a script of
-  this repository with its sum in the ebuild (D28); `repo-uconsole` of
-  `uconsole/linux`.
+  this repository with its sum in the ebuild (D28), in the overlay
+  `uconsole`.
 - `sys-power/axp22x-soft-battery`: `linux-mod-r1`, `virtual/dist-kernel`;
   the module, `/etc/modprobe.d/axp22x-soft-battery.conf` (`blacklist
   axp20x_battery`), and `axp22x-soft-battery.dtbo` in `/boot/overlays`,
@@ -396,16 +396,15 @@ least `seq` is deleted (D103). A file: lines `KEY=value`, `seq` of 6 digits (D52
 ## The kernel series
 
 0010 leaves the series (D4, D57, D71): its work is the guard of the
-module. `kernel/bump.sh --sum` after. In `uconsole/linux`, committed by the
-user.
+module. Its file leaves the package of the kernel, with a new sum; committed by
+the user.
 
 ## Steps
 
 1. Done: the writes of Rex in the datasheet; the write of GPIO0 stays
    as Rex has it, where GPIO0 goes is not looked for (D113). The overlays target `/` only (D111); the paths
    of the nodes of the PMIC are not needed.
-2. Done: the scheme of B on the desk of showcase,
-   `shots/3-variant-b.scheme`.
+2. Done: the scheme of B.
 3. Done: the packages (D108): `package.sh`, the two ebuilds, skeletons
    of the module and of the program, the overlay of the package. Left:
    `linux-mod-r1` and `cargo` in the cross build of unidev (no docker
@@ -417,8 +416,8 @@ user.
 5. Done: the program (D117), `daemon/src/`; `import` of the three logs
    and `gen-dts` tried here; `daemon` not yet on the device.
 6. The kernel series: the file of 0010 deleted from
-   `files/patches/uconsole-7.3/`. Left to the user: `kernel/bump.sh
-   --sum` and the commit in `uconsole/linux`.
+   `files/patches/uconsole-7.3/`. Left to the user: the new sum of the
+   package of the kernel and its commit.
 7. A test on the device: the module with the overlay of the package; a
    model from the three logs by `import` and `gen-dts`; a full charge and a
    discharge to the silence with the daemon.

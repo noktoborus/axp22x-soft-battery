@@ -18,11 +18,9 @@ RULE product = the battery of the uConsole: a kernel module that shows
      that learns the cells, keeps the runs, makes the model as a `.dts`,
      and powers the system off at the end of a discharge
 RULE device = uConsole with a CM5, the PMIC AXP228
-RULE linux = the research of the kernel: the series of the kernel, the
-     packages of repo-uconsole
-RULE hardware = uconsole/hardware: the notes on the PMIC, the
-     gauge, the discharge, the tool axp-log
-THEN a fact from there is cited by its path, not copied here
+RULE packages = the two packages of the overlay `uconsole`:
+     `sys-power/axp22x-soft-battery`, `sys-power/axp22x-soft-battery-daemon`;
+     `package.sh` writes them into the overlay `UCONSOLE_REPO` names
 RULE state : the module and the program are written, not yet tried on
      the device; the design of variant B is in `docs/plan.md`
 REF  docs/plan.md
@@ -57,7 +55,8 @@ RULE docs.update : an answer of the user goes into discussion.md, and
      into decisions.md when it decides a thing, in the same commit
 THEN a changed decision is changed in decisions.md; discussion.md keeps
      how it changed
-RULE docs.lang = simplified english (the rules of the workspace, `text.lang`)
+RULE docs.lang = simplified english: short sentences, common words, one
+     idea per sentence
 
 ## Kernel module
 

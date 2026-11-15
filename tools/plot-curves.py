@@ -1,6 +1,6 @@
 """Draw the curves of the logs as an SVG: OCV = V + I x R against the percent
 left (each run to its own silence), each run and their mean; under it the
-gap of each run to the mean. Text in Russian, for the desk of showcase.
+gap of each run to the mean. Text in Russian.
 
 Usage: python3 -I plot-curves.py <R in mOhm> <out.svg> <label=log> ..."""
 import json, statistics as st, sys

@@ -20,14 +20,7 @@ the program do no work yet.
 | `docs/discussion.md` | the log of the discussion, by date |
 | `module/` | the module, its `Makefile`, the overlay `axp22x-soft-battery.dts`, the file of modprobe.d |
 | `daemon/` | the program `axp22x-soft-battery` (Rust), its unit and preset |
-| `package.sh` | copies `module/` and `daemon/` into `files/` of `sys-power/axp22x-soft-battery` and `sys-power/axp22x-soft-battery-daemon` of repo-uconsole, writes the sums; `--check` |
-
-## Related
-
-- `the research of the kernel`: the kernel series (the patch 0010 to
-  remove), repo-uconsole, `notes/custom-battery.md`.
-- `uconsole/hardware`: `notes/battery-gauge.md`,
-  `notes/discharge-cm5.md`, `tools/axp-log`.
+| `package.sh` | copies `module/` and `daemon/` into `files/` of `sys-power/axp22x-soft-battery` and `sys-power/axp22x-soft-battery-daemon` of the overlay `UCONSOLE_REPO` names, writes the sums; `--check` |
 
 ## Tools
 
@@ -41,5 +34,5 @@ the program do no work yet.
 | `tools/sim-end-mean.py` | the same with the mean model of two logs over the third; also the jump to 0 % |
 | `tools/sim-start.py` | the start level by the voltage alone (a boot in the middle of a discharge), with R and with no R, the mean model of two logs over the third |
 | `tools/make-curve.py` | from logs to the silence: the default curve OCV by the percent left, its spread, the error of the level by the voltage alone; the table for the module and for the device tree |
-| `tools/plot-curves.py` | the curves of the logs and their mean as an SVG (for the desk of showcase; `convert -density 144` makes the PNG) |
+| `tools/plot-curves.py` | the curves of the logs and their mean as an SVG (`convert -density 144` makes the PNG) |
 | `tools/check-regs.sh` | on the device: the values of the device tree against the registers of the AXP (`i2cget`) and the properties of the module; V_OFF, the target and the current of the charge, each reg-write |
