@@ -20,7 +20,6 @@ the program do no work yet.
 | `docs/discussion.md` | the log of the discussion, by date |
 | `module/` | the module, its `Makefile`, the overlay `axp22x-soft-battery.dts`, the file of modprobe.d |
 | `daemon/` | the program `axp22x-soft-battery` (Rust), its unit and preset |
-| `package.sh` | copies `module/` and `daemon/` into `files/` of `sys-power/axp22x-soft-battery` and `sys-power/axp22x-soft-battery-daemon` of the overlay `UCONSOLE_REPO` names, writes the sums; `--check` |
 
 ## Tools
 

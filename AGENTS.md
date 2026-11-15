@@ -19,8 +19,7 @@ RULE product = the battery of the uConsole: a kernel module that shows
      and powers the system off at the end of a discharge
 RULE device = uConsole with a CM5, the PMIC AXP228
 RULE packages = the two packages of the overlay `uconsole`:
-     `sys-power/axp22x-soft-battery`, `sys-power/axp22x-soft-battery-daemon`;
-     `package.sh` writes them into the overlay `UCONSOLE_REPO` names
+     `sys-power/axp22x-soft-battery`, `sys-power/axp22x-soft-battery-daemon`
 RULE state : the module and the program are written, not yet tried on
      the device; the design of variant B is in `docs/plan.md`
 REF  docs/plan.md
@@ -36,10 +35,10 @@ RULE layout.module = module/, the source of the package
      `axp22x-soft-battery.dts`, the file of modprobe.d
 RULE layout.daemon = daemon/, the source of the package
      `sys-power/axp22x-soft-battery-daemon`: the crate, the unit, the preset
-RULE layout.package : `package.sh` copies module/ and daemon/ (the files in
-     git) into files/ of the two packages and writes the sums (D28)
-THEN after a change of module/ or daemon/, commit, then `./package.sh`;
-     `./package.sh --check` says if files/ is behind
+RULE package.copy : the ebuilds take module/ and daemon/ (the files in
+     git) as a copy in files/ of the two packages, with its sum; the copy
+     is made outside this repository (D131)
+THEN after a change of module/ or daemon/, commit; the copy follows
 THEN a new crate in Cargo.lock goes into CRATES and the Manifest of the
      ebuild of the daemon
 

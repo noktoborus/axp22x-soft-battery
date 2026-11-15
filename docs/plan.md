@@ -405,7 +405,7 @@ the user.
    as Rex has it, where GPIO0 goes is not looked for (D113). The overlays target `/` only (D111); the paths
    of the nodes of the PMIC are not needed.
 2. Done: the scheme of B.
-3. Done: the packages (D108): `package.sh`, the two ebuilds, skeletons
+3. Done: the packages (D108): the copy into them (D131), the two ebuilds, skeletons
    of the module and of the program, the overlay of the package. Left:
    `linux-mod-r1` and `cargo` in the cross build of unidev (no docker
    here).
