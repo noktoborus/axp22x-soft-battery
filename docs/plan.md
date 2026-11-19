@@ -98,17 +98,17 @@ By the voltage always (D90), on two curves (D91):
 
 | state | the level |
 |---|---|
-| no charger | OCV ≈ V + I × R on the curve of the discharge |
+| `Discharging`: no charger, or the cells give current with it in (D141) | OCV ≈ V + I × R on the curve of the discharge |
 | the charger in, the voltage under `constant-charge-voltage-max` − `full-margin-microvolt` | OCV ≈ V − I × R on the curve of the discharge |
-| the charger in, the voltage at that or over (the phase of constant voltage) | the current of the charge on the curve of the charge; with none, OCV ≈ V − I × R on the curve of the discharge (D102) |
+| the charger in, the voltage at that or over (the phase of constant voltage), a current into the cells | the current of the charge on the curve of the charge; with none, OCV ≈ V − I × R on the curve of the discharge (D102) |
 | the full state (D40) | 100 % |
 
 - V and I are the means of 30 s; R is `factory-internal-resistance-micro-ohms`
   of the cells (D111).
-- On a discharge the level does not rise (D60); on a charge it does not
-  fall (D91).
-- 0 % when the mean of 30 s of the voltage is `end-microvolt` or under
-  (D21, D35).
+- In `Discharging` the level does not rise (D60); in another status it
+  does not fall (D91, D141).
+- 0 % in `Discharging` when the mean of 30 s of the voltage is
+  `end-microvolt` or under (D21, D35, D141).
 - The curve of the discharge: `ocv-capacity-table-0` (D106; the overlay
   of the package has the mean of the three logs, D59). The curve of the charge:
   `axp22x-soft-battery,charge-cv-table`, else none and none built in: the
@@ -133,14 +133,17 @@ By the voltage always (D90), on two curves (D91):
 ### status (D40)
 
 - No charger: `Discharging`.
+- The charger in, the mean current of a full window (`SB_MEAN_SAMPLES`)
+  out of the cells: `Discharging`; the charger is too weak for the load
+  (D141). No threshold: at the full state the cells take 12-50 mA.
 - The charger in, the current of the charge `full-current-microamp` or
   more: `Charging`, no read of 0x01.
 - Under it: bit 6 of 0x01 = 1 → `Charging`; bit 6 = 0 and the voltage at
   `constant-charge-voltage-max` − `full-margin-microvolt` or over → `Full` (the full
   state); bit 6 = 0 under it → `Not charging`.
 - `Full` holds while the charger is in and bit 6 = 0, whatever the
-  voltage: it ends when the charger goes or the PMIC charges again
-  (D137).
+  voltage: it ends when the charger goes, the PMIC charges again
+  (D137) or the cells give current (D141).
 
 ### The properties (D43, D55, D92-D95, D127)
 
@@ -187,7 +190,8 @@ axp20x-battery-power-supply:`.
   `energy_full`, the count of `reg-writes` (D76, D87).
 - `<property> missing` or `<property> refused: <value>, <why>` (`err`),
   then the probe fails (D106).
-- `full: 4204 mV at 21 mA`; `charger out`; `level 0 %: 3211 mV at 2450 mA`.
+- `full: 4204 mV at 21 mA`; `charger out`; `discharge with the charger
+  in: 4150 mV at 300 mA` (D141); `level 0 %: 3211 mV at 2450 mA`.
 - `AXP silent: 7 samples failed in 60000 ms, last -6`; `AXP answers
   again after 9 failed samples, 80000 ms`; `guard: power off` or `guard
   off by no-hardware-protect: ...`.
@@ -291,8 +295,8 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
   daemon works it out, from `online` of `axp22x-ac`, the current of the
   charge and the voltage, with `full-current-microamp`,
   `full-margin-microvolt` of the node and
-  `constant-charge-voltage-max-microvolt` of the cells: no charger →
-  `Discharging`; the current at `full-current` or over → `Charging`; else
+  `constant-charge-voltage-max-microvolt` of the cells: no charger, or
+  a current out of the cells → `Discharging` (D141); the current at `full-current` or over → `Charging`; else
   `Full` when the voltage is at the target less the margin, or it was
   `Full` (D137); else `Not charging`. A change of the source is a line.
 - Each read of the ADC that fails is a line with the error, the count in
