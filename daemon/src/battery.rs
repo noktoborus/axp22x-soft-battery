@@ -51,6 +51,9 @@ pub enum Read {
     Ok(Reading),
     /// The values of now are gone: the AXP is silent.
     Silent,
+    /// One read of the ADC of now failed; the module has not found the
+    /// silence yet.
+    Missed,
     /// The directory of the battery is not there.
     Gone,
     /// Another error.
@@ -58,6 +61,7 @@ pub enum Read {
 }
 
 const ENODATA: i32 = 61;
+const ENODEV: i32 = 19;
 
 fn read_value(dir: &Path, name: &str) -> io::Result<String> {
     Ok(fs::read_to_string(dir.join(name))?.trim().to_string())
@@ -86,6 +90,7 @@ pub fn read() -> Read {
     match read_all(dir) {
         Ok(r) => Read::Ok(r),
         Err(e) if e.raw_os_error() == Some(ENODATA) => Read::Silent,
+        Err(e) if e.raw_os_error() == Some(ENODEV) => Read::Missed,
         Err(_) if !dir.exists() => Read::Gone,
         Err(e) => Read::Failed(e),
     }

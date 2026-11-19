@@ -165,6 +165,9 @@ energy (`discussion.md`, "What upower reads, and what soft-battery gives").
   From then `status`, `capacity`, `voltage_now`, `current_now`,
   `power_now`, `energy_now` give `-ENODATA` (D93, D94); the values of design
   stay. The work goes on.
+- A failed read of the ADC at a request, before the silence: `-ENODEV`
+  for `voltage_now`, `current_now`, `power_now`; the daemon skips that
+  read (D132).
 - `guard-samples` (12) failed samples, about 2 min:
   `hw_protection_trigger("AXP silent", 20000)` (D71).
 
@@ -310,7 +313,7 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
 - What ends a run, with a line in the journal, and the daemon exits (D89,
   D97): a suspend (by `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`, D66, D69); a
   gap of over 60 s between two reads; the directory of the battery gone; a
-  read that fails with another error than `ENODATA`; a current past the
+  read that fails with another error than `ENODATA` or `ENODEV`; a current past the
   bounds of the ADC; a stop of the daemon (SIGTERM: a power off by upower
   or by hand): "the run was broken off".
 - At each exit, for any cause, the daemon prints to the journal the data

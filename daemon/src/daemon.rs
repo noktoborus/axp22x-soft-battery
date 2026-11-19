@@ -299,6 +299,7 @@ impl<'a> Daemon<'a> {
                     self.told_silent = true;
                 }
             }
+            Read::Missed => println!("a read of now failed: skipped"),
             Read::Gone if self.in_run() => {
                 self.break_off("the battery of the module is gone")?;
                 return Ok(Some(ExitCode::FAILURE));

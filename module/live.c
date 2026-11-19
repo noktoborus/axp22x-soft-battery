@@ -57,8 +57,9 @@ static bool sb_has_data(struct sb *sb)
 
 /*
  * The voltage and the current of now: the last read if it is younger than
- * a second, else a read of the ADC. With no data, or a failed read,
- * -ENODATA: the uevent leaves the value out and does not fail.
+ * a second, else a read of the ADC. With no data, -ENODATA; a failed read,
+ * -ENODEV: the silence is told only by the samples. The uevent leaves out
+ * a value with either error and does not fail.
  */
 int sb_live_get(struct sb *sb, int *v_uv, int *i_ua)
 {
@@ -67,7 +68,7 @@ int sb_live_get(struct sb *sb, int *v_uv, int *i_ua)
 
 	guard(mutex)(&sb->live_lock);
 	if (!sb_live_fresh(sb) && sb_live_read_adc(sb))
-		return -ENODATA;
+		return -ENODEV;
 	*v_uv = sb->live_v_uv;
 	*i_ua = sb->live_i_ua;
 	return 0;
