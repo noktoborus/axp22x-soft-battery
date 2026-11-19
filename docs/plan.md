@@ -138,18 +138,21 @@ By the voltage always (D90), on two curves (D91):
 - Under it: bit 6 of 0x01 = 1 → `Charging`; bit 6 = 0 and the voltage at
   `constant-charge-voltage-max` − `full-margin-microvolt` or over → `Full` (the full
   state); bit 6 = 0 under it → `Not charging`.
+- `Full` holds while the charger is in and bit 6 = 0, whatever the
+  voltage: it ends when the charger goes or the PMIC charges again
+  (D137).
 
 ### The properties (D43, D55, D92-D95, D127)
 
 `present`, `status`, `technology` (from `device-chemistry`), `capacity`,
-`voltage_now`, `voltage_ocv` (D120), `current_now` (negative on a
-discharge), `power_now` (V × I), `energy_now` (the level × `energy_full`),
+`voltage_now`, `current_now` (negative on a discharge), `power_now`
+(V × I), all of the last sample (D133); `energy_now` (the level × `energy_full`),
 `energy_full` (`energy-full-microwatt-hours` of the node),
 `energy_full_design` (the cells), `voltage_min_design`,
 `voltage_max_design`, `voltage_min` (V_OFF) and `voltage_max` (the target
 of the charge), `in0_min` and `in0_max` of hwmon (D127),
-`constant_charge_current_max`, `internal_resistance` (the R in use),
-`scope` (System).
+`constant_charge_current_max`, `scope` (System). No `voltage_ocv`, no
+`internal_resistance` (D136).
 
 Not given: `temp` (D92), `charge_*` (D95), `capacity_level` and
 `time_to_*` (D55), `health` (D93), `charge_counter` (D90). upower works out
@@ -161,15 +164,12 @@ energy (`discussion.md`, "What upower reads, and what soft-battery gives").
 - A sample fails when all its three reads of IIO give `-ENXIO`; another
   error, or a part of them, is a line `ADC read failed` (rate limited) and
   the sample is skipped (D41).
-- `silent-samples` (6) failed samples in a row, about 1 min: the silence.
-  From then `status`, `capacity`, `voltage_now`, `current_now`,
-  `power_now`, `energy_now` give `-ENODATA` (D93, D94); the values of design
-  stay. The work goes on.
-- A failed read of the ADC at a request, before the silence: `-ENODEV`
-  for `voltage_now`, `current_now`, `power_now`; the daemon skips that
-  read (D132).
-- `guard-samples` (12) failed samples, about 2 min:
-  `hw_protection_trigger("AXP silent", 20000)` (D71).
+- The samples fail for `silent-ms` (60 s) from the first failed one: the
+  silence. From then `status`, `capacity`, `voltage_now`, `current_now`,
+  `power_now`, `energy_now` give `-ENODATA` (D93, D94, D134); the values
+  of design stay. The work goes on; a good sample ends the silence.
+- For `guard-ms` (180 s): `hw_protection_trigger("AXP silent", 20000)`
+  (D71, D134); with `no-hardware-protect`, a line only (D135).
 
 ### Suspend (D33)
 
@@ -188,7 +188,9 @@ axp20x-battery-power-supply:`.
 - `<property> missing` or `<property> refused: <value>, <why>` (`err`),
   then the probe fails (D106).
 - `full: 4204 mV at 21 mA`; `charger out`; `level 0 %: 3211 mV at 2450 mA`.
-- `AXP silent: 6 samples failed, last -6`; `guard: power off`.
+- `AXP silent: 7 samples failed in 60000 ms, last -6`; `AXP answers
+  again after 9 failed samples, 80000 ms`; `guard: power off` or `guard
+  off by no-hardware-protect: ...`.
 - `ADC read failed: -5` (rate limited); `suspend`; `resume`; `removed`.
 
 ### Memory
@@ -245,10 +247,12 @@ are not read: the values of design are set again in the cells.
 | the node | `axp22x-soft-battery,end-microvolt` | the package, `gen-dts` | 3200000 | 0 % (D21, D35, D73) |
 | the node | `axp22x-soft-battery,charge-cv-table` | `gen-dts` | none: optional | the curve of the charge: pairs of µA and percent (D91) |
 | the node | `axp22x-soft-battery,sample-interval-ms` | the package | 10000 | the period of the work (D70, D72) |
+| the node | `axp22x-soft-battery,fast-samples`, `fast-interval-ms` | the package | 5, 1000 | the samples after the charger comes or goes, and at the start (D134) |
 | the node | `axp22x-soft-battery,full-margin-microvolt` | the package | 50000 | the full state (D39) |
 | the node | `axp22x-soft-battery,full-current-microamp` | the package | 100000 | the full state (D39) |
-| the node | `axp22x-soft-battery,silent-samples` | the package | 6 | the silence (D41) |
-| the node | `axp22x-soft-battery,guard-samples` | the package | 12 | the guard (D71) |
+| the node | `axp22x-soft-battery,silent-ms` | the package | 60000 | the silence (D41, D134) |
+| the node | `axp22x-soft-battery,guard-ms` | the package | 180000 | the guard (D71, D134) |
+| the node | `axp22x-soft-battery,no-hardware-protect` | none: optional | not set | the guard writes a line only (D135) |
 | the node | `axp22x-soft-battery,reg-writes` | the package | the five writes of Rex | triples `<reg mask value>` for `regmap_update_bits()` (D105) |
 
 The five writes of Rex (`discussion.md`, "The writes of Rex"):
@@ -278,10 +282,22 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
 - A service of systemd, enabled by a preset, from the boot; no `Restart=`,
   no rule of udev, no order against upower (D68, D79, D87). Its log is the
   journal (D67).
-- Each 10 s it reads `status`, `voltage_now`, `current_now` of
-  `/sys/class/power_supply/axp22x-soft-battery/` (D63, D70); once a minute
-  `temp1_input` of the hwmon `axp_hwmon` (D85). The directory not there: it
-  waits.
+- Each 10 s it reads the voltage and the two currents of the battery from
+  the IIO device `axp22x-adc` (`in_voltage1_raw`, `in_current1_raw`,
+  `in_current2_raw`, times their scales, read once), and `status` of the
+  module (D138); once a minute the temperature of the PMIC from the same
+  device (`in_temp_*`, D85). No `axp22x-adc`: it waits.
+- `status` of the module not there (no module, no file, no value): the
+  daemon works it out, from `online` of `axp22x-ac`, the current of the
+  charge and the voltage, with `full-current-microamp`,
+  `full-margin-microvolt` of the node and
+  `constant-charge-voltage-max-microvolt` of the cells: no charger →
+  `Discharging`; the current at `full-current` or over → `Charging`; else
+  `Full` when the voltage is at the target less the margin, or it was
+  `Full` (D137); else `Not charging`. A change of the source is a line.
+- Each read of the ADC that fails is a line with the error, the count in
+  a row and the time; a good one after them, a line. No read works for
+  60 s: the AXP is gone (D139).
 - A run of a discharge (D96):
   - the start: `status` was `Full` and is not now (D14); the values at rest
     are those of that last `Full` read;
@@ -290,13 +306,13 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
     |ΔI| ≥ 65 mA; not under 3.7 V, not when `status` changed between the
     two (the start from `Full`, the charger in or out), not out of
     2/3..4/3 of the mean of the last 8 taken; that mean starts at
-    `internal_resistance` of the module. R of the run: the mean of all the
+    `factory-internal-resistance-micro-ohms` of the cells. R of the run: the mean of all the
     steps taken; 0 when none;
   - the charge and the energy by trapezoids over `CLOCK_MONOTONIC` (D89);
     each read kept: the charge out, V, I;
   - the charger in during a run: the count goes on, net; `Full` again: the
     run starts again;
-  - the end: a read gives `ENODATA` (D94). `V_end`, `I_end`: the means of
+  - the end: the AXP is gone (D139). `V_end`, `I_end`: the means of
     the last 3 good reads; the model of the run: `Q_full`, `E_full`, R,
     `V_end`, `I_end`, the table of 21 points as OCV (V + I × R, the means of
     60 s at each 5 %) (D90), the temperature (D85); the check (D54, D51);
@@ -312,14 +328,15 @@ Rust (D25); one crate, `lexopt`; errors by `Box<dyn std::error::Error>`;
   first, then the oldest, to `charge/archive/` (D126).
 - What ends a run, with a line in the journal, and the daemon exits (D89,
   D97): a suspend (by `CLOCK_BOOTTIME` − `CLOCK_MONOTONIC`, D66, D69); a
-  gap of over 60 s between two reads; the directory of the battery gone; a
-  read that fails with another error than `ENODATA` or `ENODEV`; a current past the
+  gap of over 60 s between two tries to read (D139); a current past the
   bounds of the ADC; a stop of the daemon (SIGTERM: a power off by upower
-  or by hand): "the run was broken off".
+  or by hand): "the run was broken off". A failed read does not end a
+  run; the module gone does not either: the status is then the daemon's.
 - At each exit, for any cause, the daemon prints to the journal the data
   it gathered: the run so far, cut short or whole (D97, D98). A run cut
   short is kept in `discharge/partial/` (D99, D100): `REASON=` (the cause), `STOP_LEVEL=`
-  (the level by the curve at the stop), `Q_full` and `E_full` = the charge
+  (the level at the stop: OCV of the last read as in the table, on
+  `ocv-capacity-table-0`, D138), `Q_full` and `E_full` = the charge
   and the energy out / (1 − `STOP_LEVEL`), R and the table as far as it
   went (the points under the stop from the curve in use), no `V_end`.
 - The settings of upower are left alone (D97).
@@ -343,8 +360,9 @@ holds it:
   `discharge/full/` + 50 mV (D35, D48); never of `partial/`, which has no
   `V_end`;
 - the curve of the charge: the mean of the runs of `charge/full/` on a
-  grid of the percent, a step of 2 %, from the lowest start of the phase
-  of constant voltage of the runs to 100 %; the percent of a point of a
+  grid of whole percents from the lowest start of the phase of constant
+  voltage of the runs to 100 %, the step the least of 1 % and of what
+  keeps 16 points (D140); the percent of a point of a
   run is counted back from `Full`, 100 − (the charge in after it) /
   `Q_full`; at each step of the grid the mean current of the runs that
   have that step (D128); at most 16 pairs (D110); `axp22x-soft-battery,charge-cv-table` on the node.

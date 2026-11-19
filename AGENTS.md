@@ -61,8 +61,9 @@ RULE docs.lang = simplified english: short sentences, common words, one
 
 RULE module.minimal : the module does its job and nothing more: no
      fallback, no retry, no workaround
-EXC  the guard of the silence: at 12 failed samples in a row the module
-     calls `hw_protection_trigger()` (D71, the word of the user)
+EXC  the guard of the silence: when the samples fail for `guard-ms` the
+     module calls `hw_protection_trigger()`, unless `no-hardware-protect`
+     is set (D71, D134, D135, the word of the user)
 RULE module.impact : the module weighs as little as it can on the running
      system: as few locks as it can, the interfaces of the drivers there
      are before a read of its own
@@ -86,7 +87,8 @@ RULE module.overlay : each property of `axp22x-soft-battery.dts` has a
      module takes; never a number of docs/decisions.md
 RULE module.poweroff : the module does not power the system off; user
      space decides it
-EXC  the guard of D71: `hw_protection_trigger()` at 12 failed samples
+EXC  the guard of D71: `hw_protection_trigger()` at `guard-ms` of failed
+     samples
 RULE module.axp : the AXP is not a store and its gauge is not used
 WHY  the AXP forgets what was written into its registers
 THEN from the AXP the module takes only what it measures and tells now:
