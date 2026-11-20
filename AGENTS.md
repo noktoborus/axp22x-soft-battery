@@ -27,7 +27,7 @@ REF  docs/plan.md
 ## Layout
 
 RULE layout.tools = tools/, scripts that read logs of the device for the
-     design; each listed in README.md, "Tools"
+     design; each says its use in its head
 RULE layout.docs = docs/, the documents (below)
 RULE layout.module = module/, the source of the package
      `sys-power/axp22x-soft-battery`: the module (`sb.h`, `*.c`), its
