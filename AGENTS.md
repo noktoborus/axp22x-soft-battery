@@ -48,12 +48,9 @@ RULE docs.decisions = docs/decisions.md, what is decided: one entry per
      decision, a number, the date, who decided
 RULE docs.plan = docs/plan.md, the steps of the work and the open
      questions
-RULE docs.discussion = docs/discussion.md, the log of the discussion by
-     date: the question, the options, the answer
-RULE docs.update : an answer of the user goes into discussion.md, and
-     into decisions.md when it decides a thing, in the same commit
-THEN a changed decision is changed in decisions.md; discussion.md keeps
-     how it changed
+RULE docs.update : an answer of the user that decides a thing goes into
+     decisions.md, in the same commit
+THEN a changed decision is changed in decisions.md
 RULE docs.lang = simplified english: short sentences, common words, one
      idea per sentence
 

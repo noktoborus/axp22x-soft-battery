@@ -1,6 +1,6 @@
 # Plan
 
-The decisions are in `decisions.md`; how they came, in `discussion.md`.
+The decisions are in `decisions.md`.
 Each point names its decision (Dnn). Variant B, the module and the daemon
 of learning, is made (D61, D80); variant A is kept apart, at the end.
 
@@ -160,7 +160,7 @@ of the charge), `in0_min` and `in0_max` of hwmon (D127),
 Not given: `temp` (D92), `charge_*` (D95), `capacity_level` and
 `time_to_*` (D55), `health` (D93), `charge_counter` (D90). upower works out
 the times, the health and the percent of the display device from the
-energy (`discussion.md`, "What upower reads, and what soft-battery gives").
+energy.
 
 ### The silence of the AXP
 
@@ -259,7 +259,7 @@ are not read: the values of design are set again in the cells.
 | the node | `axp22x-soft-battery,no-hardware-protect` | none: optional | not set | the guard writes a line only (D135) |
 | the node | `axp22x-soft-battery,reg-writes` | the package | the five writes of Rex | triples `<reg mask value>` for `regmap_update_bits()` (D105) |
 
-The five writes of Rex (`discussion.md`, "The writes of Rex"):
+The five writes of Rex:
 
 ```dts
 axp22x-soft-battery,reg-writes =
